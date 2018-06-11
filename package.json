@@ -1,0 +1,27 @@
+{
+  "name": "mailgun-mate",
+  "version": "1.0.0",
+  "description": "CLI to work with mailgun",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "BinaryMist",
+    "email": "services@binarymist.net"
+  },
+  "license": "ISC",
+  "homepage": "https://github.com/binarymist/mailgun-mate",
+  "bin": {
+    "mailgun-mate": "./bin/mailgun-mate"
+  },
+  "dependencies": {
+    "app-module-path": "^2.2.0",
+    "chalk": "^2.4.1",
+    "convict": "^4.3.0",
+    "figlet": "^1.2.0",
+    "inquirer": "^6.0.0",
+    "mailgun-js": "^0.18.0",
+    "sywac": "^1.2.0"
+  }
+}
