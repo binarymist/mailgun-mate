@@ -15,8 +15,13 @@ const schema = {
       default: 'notice'
     }
   },
+  emailList: {
+    doc: 'The mailgun email list you would like to use.',
+    format: String,
+    default: ''
+  },
   'o:testmode': {
-    doc: 'Whether you would like to send emails in test mode of not.',
+    doc: 'Whether you would like to send emails in test mode of not (https://documentation.mailgun.com/en/latest/user_manual.html#sending-in-test-mode).',
     format: 'Boolean',
     default: true
   },

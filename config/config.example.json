@@ -2,6 +2,7 @@
   "logger": {
     "level": "debug"  
   },
+  "emailList": "test@mailgun.you.com",
   "domain": "mailgun.you.com"
 }
 
