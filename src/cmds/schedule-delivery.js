@@ -4,10 +4,45 @@ const emailCheckBoxPrompt = inquirer.createPromptModule();
 const apiKeyPrompt = inquirer.createPromptModule();
 const config = require('config/config');
 
+const moment = require('moment');
 
-
+const Type = require('sywac/types/type')
 
 const internals = {emailProps: {}};
+
+
+class mailgunDateTimeFormat extends Type {
+  get datatype () {
+    return 'mailgunDateTimeFormat'
+  }
+  setValue (context, value) {
+    
+    debugger;
+    context.assignValue(this.id, value);
+  }
+  validateValue (value) {
+    debugger;
+    // https://momentjs.com/docs/#/parsing/string-format/
+    const scheduledTime = moment(value, config.get('mailgunTimeFormat'))
+    internals.scheduleDateIsValid = scheduledTime.isValid();
+    if (!internals.scheduleDateIsValid) return false;
+    internals.scheduleDateIsBeforeDeadline = scheduledTime.isBefore(moment().add(config.get('mailgunMaxFutureScheduleInDays'), 'days'));
+    return internals.scheduleDateIsBeforeDeadline;
+  }
+  buildInvalidMessage (context, msgAndArgs) {
+    let customMessage;
+    debugger;
+    super.buildInvalidMessage(context, msgAndArgs);
+
+    if (!internals.scheduleDateIsValid) customMessage = `The datetime you entered was not valid according to mailgun\'s rules. RFC 2822, formatted as mailgun requires "${config.get('mailgunTimeFormat')}", See (https://documentation.mailgun.com/en/latest/user_manual.html#scheduling-delivery) for more information.`; 
+    else if (!internals.scheduleDateIsBeforeDeadline) customMessage = `The datetime you entered was outside of the mailgun ${config.get('mailgunMaxFutureScheduleInDays')} days schedule linmmit.`
+
+    msgAndArgs.msg += ` Please specify a valid schedule datetime. ${customMessage} Please try again.`
+  }
+}
+
+
+
 
 
 
@@ -102,7 +137,9 @@ internals.scheduleEmailBatch = async () => {
 exports.flags = 'schedule-delivery';
 exports.description = 'Launch scheduled mail delivery, max of three days in advance.';
 exports.setup = (sywac) => {
-  sywac.option(
+  debugger;
+  sywac
+  .option(
     '-l, --email-list <email-list>',
     {
       type: 'string', desc: 'The mailgun email list you would like to use.', strinct: true, defaultValue: config.get('emailList')
@@ -126,10 +163,11 @@ exports.setup = (sywac) => {
       type: 'string', desc: 'The subject for the email', strict: true
     }
   )
+  .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts))
   .option(
     '-t, --schedule-time <time-to-schedule-email-send-for>',
     {
-      type: 'string', desc: 'The time that all emails will be sent.', strict: true
+      type: 'mailgunDateTimeFormat', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true
     }
   )
   .option(
@@ -176,8 +214,10 @@ exports.run = async (parsedArgv, context) => {
   }
 
   if (parsedArgv.t) {
+    debugger;
     internals.emailProps['o:deliverytime'] = parsedArgv.t;
   } else {
+    debugger;
     return context.cliMessage('You must provide a valid schedule time.');
   }
 
@@ -214,7 +254,7 @@ exports.run = async (parsedArgv, context) => {
   await emailCheckBoxPrompt({
     type: 'checkbox',
     name: 'targetEmailAddresses',
-    message: 'Which list members would you like to target?',
+    message: 'Which list members would you like to target? You can select up to 1000.',
     choices: internals.candidates,
     pageSize: 20
   }).then((answers) => {

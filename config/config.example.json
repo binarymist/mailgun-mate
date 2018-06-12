@@ -3,6 +3,8 @@
     "level": "debug"  
   },
   "emailList": "test@mailgun.you.com",
-  "domain": "mailgun.you.com"
+  "domain": "mailgun.you.com",
+  "mailgunTimeFormat": "ddd-DD-MMM-YYYY-HHmmss-ZZ",
+  "mailgunMaxFutureScheduleInDays": 3
 }
 

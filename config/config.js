@@ -29,6 +29,16 @@ const schema = {
     doc: 'The mail domain.',
     format: String,
     default: ''
+  },
+  mailgunTimeFormat: {
+    doc: 'The mailgun time format for scheduling emails. Value is assinged to "o:deliverytime" as showen here: https://documentation.mailgun.com/en/latest/user_manual.html#scheduling-delivery. Additional details used to build the string found here: https://momentjs.com/docs/#/parsing/string-format/',
+    format: String,
+    default: ''
+  },
+  mailgunMaxFutureScheduleInDays: {
+    doc: 'Messages can be scheduled for a maximum of n days in the future.',
+    format: 'int',
+    default: 0
   }
 };
 
