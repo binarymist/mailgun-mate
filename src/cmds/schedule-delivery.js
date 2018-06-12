@@ -132,7 +132,8 @@ internals.scheduleEmailBatch = async () => {
         console.log(`Emails were scheduled. Response from mailgun was:\nid: "${data.id}"\nmessage: "${data.message}"`);
         console.log('Now updating the following list Members:');
         chosenSubscribedListMembers.forEach(listMember => console.log(`${listMember.address} `));
-        const scheduledSendToAdd = [`${internals.emailBodyFile}`, internals.scheduledSendDateTime];
+        debugger;
+        const scheduledSendToAdd = [`${internals.emailBodyFile}`, moment(internals.scheduledSendDateTime).format('YYYY-MM-DD_HH:mm:ss')];
 
         const prmoseOfUpdateListMembers = chosenSubscribedListMembers.map((memberRecord) => {
 
