@@ -30,6 +30,9 @@ class mailgunDateTimeFormat extends Type {
     if (!internals.scheduleDateIsBeforeDeadline) return false;
     internals.scheduleDateIsAfterNow = scheduledTime.isAfter(moment());
     if (!internals.scheduleDateIsAfterNow) return false;
+
+    internals.scheduledSendDateTime = value;
+    return true;
   }
   buildInvalidMessage (context, msgAndArgs) {
     let customMessage;
@@ -53,23 +56,30 @@ class mailgunDateTimeFormat extends Type {
 const establishSubscribedListMembers = async () => {
   debugger;
   const list = internals.mailgun.lists(internals.mailList);
+  internals.list = list;
 
   debugger;
   await list.info().then(
     function (data) {
       // `data` is mailing list info
       debugger;
-      console.log(data);
+      const { list: { access_level, address, created_at, description, members_count, name } } = data;
+      console.log('Authentication successful!');
+      console.log('Details for the list you selected follows:');
+      console.log(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count}\naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
     }, function (err) {
       debugger;
-      console.log(`Retrieving mail list "${internals.mailList}" was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
-      process.exit(9);
+      if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
+        console.log('Authentication unsuccessful! Feel free to try again.');
+        console.log(`Retrieving mail list "${internals.mailList}" was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
+        process.exit(9);
+      }
+      console.log(`Error occured while attempting to retrieve the mail list info. Error was: "${err}"`);
     }
   );
 
   await list.members().list().then(
     function (members) {
-      console.log('Authentication successful!');
       debugger;
       // `members` is the list of members
       console.log(members);  
@@ -77,15 +87,15 @@ const establishSubscribedListMembers = async () => {
    
       internals.subscribedListMembers = members.items.filter(item => item.subscribed)
       debugger;
-      internals.candidates = internals.subscribedListMembers.map(member => ({name: `${member.name} <${member.address}>`, value: member.address}) )
+      internals.candidatesForCheckListSelection = internals.subscribedListMembers.map(member => ({name: `${member.name} <${member.address}>`, value: member.address}) )
     }, (err) => {
       debugger;
       if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
         console.log('Authentication unsuccessful! Feel free to try again.');
+        console.log(`Retrieving mail list mebers was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
         process.exit(9);
       }
-      console.log(`Error occured while attempting to retrieve the mail list. Error was: "${err}"`);
-
+      console.log(`Error occured while attempting to retrieve the mail list members. Error was: "${err}"`);
     }
   );
 
@@ -112,14 +122,65 @@ internals.scheduleEmailBatch = async () => {
   debugger;
 
   await internals.mailgun.messages().send(internals.emailProps).then(
-    (data) => {
+    async (data) => {
       debugger;
       console.log(data);
+
+      // If was successfully received by mailgun, we need to update the recipientVars of the chosenSubscribedListMembers with the date and the name of the email body file.
+      
+      if (data.id && data.message === 'Queued. Thank you.') {
+        console.log(`Emails were scheduled. Response from mailgun was:\nid: "${data.id}"\nmessage: "${data.message}"`);
+        console.log('Now updating the following list Members:');
+        chosenSubscribedListMembers.forEach(listMember => console.log(`${listMember.address} `));
+        const scheduledSendToAdd = [`${internals.emailBodyFile}`, internals.scheduledSendDateTime];
+
+        const prmoseOfUpdateListMembers = chosenSubscribedListMembers.map((memberRecord) => {
+
+          return new Promise (async (resolve, reject) => {
+
+
+
+            debugger;
+            const newMemberRecord = memberRecord;
+            newMemberRecord.subscribed = newMemberRecord.subscribed ? 'true' : 'false'; // Stupid hack cos mailgun expects the true or false to be strings, yet they provide the value as boolean.
+            const mailgunMateScheduledSends = memberRecord.vars.mailgunMateScheduledSends ? memberRecord.vars.mailgunMateScheduledSends.concat([scheduledSendToAdd]) : [scheduledSendToAdd];
+            newMemberRecord.vars.mailgunMateScheduledSends = mailgunMateScheduledSends;
+
+            await internals.list.members(memberRecord.address).update(newMemberRecord)
+              .then((data) => {
+                debugger;
+                console.log(`address: ${`${data.member.address},`.padEnd(30)} message: ${data.message}`);
+                resolve(`Resolved promise for memberRecord ${newMemberRecord}`);
+              }, (err) => {
+                debugger;
+                reject(err);
+              });
+            debugger;
+
+
+
+          }); // End of promise
+
+    
+        });
+        debugger;
+        await Promise.all(prmoseOfUpdateListMembers).catch(reason => console.log(reason.message));
+
+      }
+
     }, (err) => {
+      console.log(`There was a problem scheduling the eamils. The error was: ${err}`);
       debugger;
     }
   );
 };
+
+
+
+
+
+
+
 
 
 
@@ -141,6 +202,7 @@ exports.description = 'Launch scheduled mail delivery, max of three days in adva
 exports.setup = (sywac) => {
   debugger;
   sywac
+  .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts))
   .option(
     '-l, --email-list <email-list>',
     {
@@ -176,8 +238,7 @@ exports.setup = (sywac) => {
     {
       type: 'boolean', desc: 'Whether or not to send in test mode "o:testmode".', strict: true, defaultValue: config.get('o:testmode')
     }
-  )
-  .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts));
+  );
 };
 exports.run = async (parsedArgv, context) => {
   const argv = parsedArgv;
@@ -202,6 +263,7 @@ exports.run = async (parsedArgv, context) => {
       process.exit(9);
     }
     console.log(`${config.get('appName')} has your file ${targetEmailBodyFilePath}`); // eslint-disable-line no-console
+    internals.emailBodyFile = parsedArgv.b;
   } else {
     return context.cliMessage('You must provide a valid html file that exists relative to the emailBodyFileDir directory you set in the configuration to be used as the email body.');
   }
@@ -226,7 +288,8 @@ exports.run = async (parsedArgv, context) => {
     return context.cliMessage('You must provide a valid schedule time.');
   }
 
-  if (parsedArgv.tm) {
+  if (typeof parsedArgv.tm === 'boolean') {
+    debugger;
     internals.emailProps['o:testmode'] = parsedArgv.tm;
   } else {
     return context.cliMessage('You must provide a test mode of true or false.');
@@ -260,7 +323,7 @@ exports.run = async (parsedArgv, context) => {
     type: 'checkbox',
     name: 'targetEmailAddresses',
     message: 'Which list members would you like to target? You can select up to 1000.',
-    choices: internals.candidates,
+    choices: internals.candidatesForCheckListSelection,
     pageSize: 20
   }).then((answers) => {
       debugger;
