@@ -27,16 +27,18 @@ class mailgunDateTimeFormat extends Type {
     internals.scheduleDateIsValid = scheduledTime.isValid();
     if (!internals.scheduleDateIsValid) return false;
     internals.scheduleDateIsBeforeDeadline = scheduledTime.isBefore(moment().add(config.get('mailgunMaxFutureScheduleInDays'), 'days'));
-    return internals.scheduleDateIsBeforeDeadline;
+    if (!internals.scheduleDateIsBeforeDeadline) return false;
+    internals.scheduleDateIsAfterNow = scheduledTime.isAfter(moment());
+    if (!internals.scheduleDateIsAfterNow) return false;
   }
   buildInvalidMessage (context, msgAndArgs) {
     let customMessage;
     debugger;
     super.buildInvalidMessage(context, msgAndArgs);
 
-    if (!internals.scheduleDateIsValid) customMessage = `The datetime you entered was not valid according to mailgun\'s rules. RFC 2822, formatted as mailgun requires "${config.get('mailgunTimeFormat')}", See (https://documentation.mailgun.com/en/latest/user_manual.html#scheduling-delivery) for more information.`; 
-    else if (!internals.scheduleDateIsBeforeDeadline) customMessage = `The datetime you entered was outside of the mailgun ${config.get('mailgunMaxFutureScheduleInDays')} days schedule linmmit.`
-
+    if (!internals.scheduleDateIsValid) customMessage = `The datetime you entered was not valid according to mailgun\'s rules. RFC 2822, formatted as mailgun requires "${config.get('mailgunTimeFormat')}", See (https://documentation.mailgun.com/en/latest/user_manual.html#scheduling-delivery) for more information.`;
+    else if (!internals.scheduleDateIsBeforeDeadline) customMessage = `The datetime you entered was outside of the mailgun ${config.get('mailgunMaxFutureScheduleInDays')} days schedule linmmit.`;
+    else if (!internals.scheduleDateIsAfterNow) customMessage = `The datetime you entered was in the past.`;
     msgAndArgs.msg += ` Please specify a valid schedule datetime. ${customMessage} Please try again.`
   }
 }
@@ -146,9 +148,9 @@ exports.setup = (sywac) => {
     }
   )
   .option(
-    '-b, --email-body-file <email-body-file-path>',
+    '-b, --email-body-file <email-body-file>',
     {
-      type: 'file', desc: 'File containing the html for the body of the email.', strinct: true, mustExist: true
+      type: 'file', desc: 'File containing the html for the body of the email. Relative to the emailBodyFileDir directory you set in the configuration.', strinct: true
     }
   )
   .option(
@@ -163,7 +165,6 @@ exports.setup = (sywac) => {
       type: 'string', desc: 'The subject for the email', strict: true
     }
   )
-  .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts))
   .option(
     '-t, --schedule-time <time-to-schedule-email-send-for>',
     {
@@ -175,7 +176,8 @@ exports.setup = (sywac) => {
     {
       type: 'boolean', desc: 'Whether or not to send in test mode "o:testmode".', strict: true, defaultValue: config.get('o:testmode')
     }
-  );
+  )
+  .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts));
 };
 exports.run = async (parsedArgv, context) => {
   const argv = parsedArgv;
@@ -190,15 +192,18 @@ exports.run = async (parsedArgv, context) => {
 
   if (parsedArgv.b) {
     // Get the file and validate it.
+    debugger;
+    const targetEmailBodyFilePath = `${config.get('emailBodyFileDir')}${parsedArgv.b}`;
   
     try {
-      internals.emailProps.html = await readFileAsync(parsedArgv.b, { encoding: 'utf8' });      
+      internals.emailProps.html = await readFileAsync(targetEmailBodyFilePath, { encoding: 'utf8' });      
     } catch (err) {
-      console.log(`Could not read file: ${parsedArgv.b}, the error was: ${err}`); // eslint-disable-line no-console
+      console.log(`Could not read file: ${targetEmailBodyFilePath}, the error was: ${err.message}.`); // eslint-disable-line no-console
+      process.exit(9);
     }
-    console.log(`I have your file ${parsedArgv.b}`); // eslint-disable-line no-console
+    console.log(`${config.get('appName')} has your file ${targetEmailBodyFilePath}`); // eslint-disable-line no-console
   } else {
-    return context.cliMessage('You must provide a valid html file that exists on the local file system to be used as the email body.');
+    return context.cliMessage('You must provide a valid html file that exists relative to the emailBodyFileDir directory you set in the configuration to be used as the email body.');
   }
 
   if (parsedArgv.f) {

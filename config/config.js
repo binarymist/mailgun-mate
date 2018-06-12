@@ -1,5 +1,6 @@
 const convict = require('convict');
 const path = require('path');
+const pkg = require('package.json');
 
 const schema = {
   env: {
@@ -14,6 +15,11 @@ const schema = {
       format: ['emerg', 'alert', 'crit', 'error', 'warning', 'notice', 'info', 'debug'],
       default: 'notice'
     }
+  },
+  appName: {
+    doc: 'The name of this application.',
+    format: String,
+    default: `${pkg.name}`
   },
   emailList: {
     doc: 'The mailgun email list you would like to use.',
@@ -39,12 +45,17 @@ const schema = {
     doc: 'Messages can be scheduled for a maximum of n days in the future.',
     format: 'int',
     default: 0
+  },
+  emailBodyFileDir: {
+    doc: 'The directory that email body files are located.',
+    format: String,
+    default: '~/mail-outs/'
   }
 };
 
 const config = convict(schema);
 config.loadFile(path.join(__dirname, `config.${process.env.NODE_ENV}.json`));
 config.validate();
-console.log('(*) Local config file loaded'); // eslint-disable-line no-console
+// console.log('(*) Local config file loaded'); // eslint-disable-line no-console
 
 module.exports = config;
