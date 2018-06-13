@@ -10,9 +10,6 @@ const Type = require('sywac/types/type')
 
 const internals = {emailProps: {}};
 
-require('request');
-const request = require('request-promise-native');
-
 
 class mailgunDateTimeFormat extends Type {
   get datatype () {
