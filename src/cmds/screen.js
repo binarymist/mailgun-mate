@@ -1,7 +1,7 @@
 const pkg = require('package.json');
 
 exports.flags = '*';
-exports.desc = 'Default command (shows the interactive screen).';
+exports.desc = 'Default command for about and help.';
 exports.setup = {};
 exports.run = (parsedArgv, context) => {
   debugger;

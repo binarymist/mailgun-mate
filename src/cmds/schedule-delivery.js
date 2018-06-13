@@ -10,6 +10,9 @@ const Type = require('sywac/types/type')
 
 const internals = {emailProps: {}};
 
+require('request');
+const request = require('request-promise-native');
+
 
 class mailgunDateTimeFormat extends Type {
   get datatype () {
@@ -47,26 +50,19 @@ class mailgunDateTimeFormat extends Type {
 }
 
 
-
-
-
-
-
-
-const establishSubscribedListMembers = async () => {
+const displayListInfo = async () => {
   debugger;
-  const list = internals.mailgun.lists(internals.mailList);
-  internals.list = list;
+  internals.list = internals.mailgun.lists(internals.mailList);
 
   debugger;
-  await list.info().then(
+  await internals.list.info().then(
     function (data) {
       // `data` is mailing list info
       debugger;
       const { list: { access_level, address, created_at, description, members_count, name } } = data;
       console.log('Authentication successful!');
       console.log('Details for the list you selected follows:');
-      console.log(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count}\naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
+      console.log(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (that\'s subscribed and unsubscribed) \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
     }, function (err) {
       debugger;
       if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
@@ -78,7 +74,71 @@ const establishSubscribedListMembers = async () => {
     }
   );
 
-  await list.members().list().then(
+};
+
+
+
+const displaySubscribedListMembers = async (order) => {
+  debugger;
+  await displayListInfo();
+  const mailgunMsxPageSize = 100;
+  let listMembers;
+
+
+  await internals.list.members().pages().page({subscribed: true, limit: mailgunMsxPageSize}).then(
+    async function (list) {
+      debugger;
+
+      listMembers = list.items;
+      let nextPage = list.paging.next.split('https://api.mailgun.net/v3')[1];
+
+      while (nextPage) {
+        debugger
+      
+        await internals.mailgun.get(nextPage).then(
+          (page) => {
+            debugger;
+            nextPage = page.items.length === mailgunMsxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
+            listMembers = listMembers.concat(page.items);
+          }, (err) => {
+            debugger;
+            console.log(`There was a problem getting subsequent pages from the mail list. The error was: ${err}`);
+            process.exit(9);
+          }
+        );
+      }
+      // Now we need to order listMembers based on the mailgunMateScheduledSends date.
+
+      
+      debugger;
+      const orderedSubscribedListMembers = listMembers.reduce( (accumulatedAddresses, member) =>  `${accumulatedAddresses}\n${member.address}`, '');
+      console.log(orderedSubscribedListMembers);
+   
+
+      debugger;
+
+    }, (err) => {
+      debugger;
+      if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
+        console.log('Authentication unsuccessful! Feel free to try again.');
+        console.log(`Retrieving mail list mebers was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
+        process.exit(9);
+      }
+      console.log(`Error occured while attempting to retrieve the mail list members. Error was: "${err}"`);
+    }
+  );
+
+};
+
+
+
+
+
+const establishSubscribedListMembers = async () => {
+
+  await displayListInfo();
+
+  await internals.list.members().list().then(
     function (members) {
       debugger;
       // `members` is the list of members
@@ -177,7 +237,23 @@ internals.scheduleEmailBatch = async () => {
 };
 
 
+const authenticateToMailgun = async () => {
 
+  debugger;
+  await apiKeyPrompt({
+    type: 'password',
+    name: 'apiKey',
+    message: 'Please enter your mailgun apiKey.'
+    
+  }).then((answer) => {
+      debugger;
+
+      internals.mailgun = require('mailgun-js')({apiKey: answer.apiKey, domain: internals.mgDomain})
+    }, (err) => {
+      console.log(err);
+    }
+  );
+};
 
 
 
@@ -239,15 +315,79 @@ exports.setup = (sywac) => {
     {
       type: 'boolean', desc: 'Whether or not to send in test mode "o:testmode".', strict: true, defaultValue: config.get('o:testmode')
     }
-  );
+  )
+  .command('list', {
+
+    desc: 'List members in order based on latest or oldest mailgunMateScheduledSends datetimes.',
+    paramsDesc: 'The order to list the items in: "des" for descending, "asc" for ascending.',
+    setup: (sywac) => {
+      sywac
+      .option(
+        '-l, --email-list <email-list>',
+        {
+          type: 'string', desc: 'The mailgun email list you would like to use.', strinct: true, defaultValue: config.get('emailList')
+        }
+      )
+      .option(   
+        '-o, --order [order]',
+        {
+          type: 'array:enum', choices: ['des', 'asc'], desc: 'Which order would you like the items displayed in.', defaultValue: 'asc'
+        }
+      );
+    },
+    run: async (parsedArgv, context) => {
+      const argv = parsedArgv;
+      debugger;
+
+      if (parsedArgv.l) {
+        internals.mailList = parsedArgv.l;  
+      } else {
+        return context.cliMessage('You must provide a valid mailgun mail list.');
+      }
+
+      internals.mgDomain = config.get('domain');
+      console.log(`Your currently configured mailgun domain is "${internals.mgDomain}".`);
+      console.log(`Your currently configured mailgun list is "${internals.mailList}".`);
+
+      await authenticateToMailgun();
+      debugger;
+      await displaySubscribedListMembers(argv.o);
+      
+
+
+
+      argv.handled = true;
+    }
+
+
+  })
+  /*.command('*', {
+    desc: 'Default command for schedule-delivery.',
+    setup: (sywac) => {
+      debugger;
+      sywac.help('-h, --help').showHelpByDefault().parseAndExit();
+    },
+    run: (parsedArgv, context) => {
+      debugger
+      const argv = parsedArgv;
+
+      if (context.args.length > 1) context.cliMessage(`Unknown argument: ${context.args[1]}`);
+ 
+      context.helpRequested = true;
+      
+      return argv;
+      //argv.handled = true;
+    }
+  })*/;
 };
 exports.run = async (parsedArgv, context) => {
   const argv = parsedArgv;
   let subject;
-  let sendTime;
+
+  
 
   if (parsedArgv.l) {
-    internals.mailList = parsedArgv.l;
+    internals.mailList = parsedArgv.l;  
   } else {
     return context.cliMessage('You must provide a valid mailgun mail list.');
   }
@@ -296,23 +436,11 @@ exports.run = async (parsedArgv, context) => {
     return context.cliMessage('You must provide a test mode of true or false.');
   }
   debugger;
-  const mgDomain = config.get('domain');
-  console.log(`Your currently configured mailgun domain is "${mgDomain}".`);
+  internals.mgDomain = config.get('domain');
+  console.log(`Your currently configured mailgun domain is "${internals.mgDomain}".`);
+  console.log(`Your currently configured mailgun list is "${internals.mailList}".`);
 
-  debugger;
-  await apiKeyPrompt({
-    type: 'password',
-    name: 'apiKey',
-    message: 'Please enter your mailgun apiKey.'
-    
-  }).then((answer) => {
-      debugger;
-
-      internals.mailgun = require('mailgun-js')({apiKey: answer.apiKey, domain: mgDomain})
-    }, (err) => {
-      console.log(err);
-    }
-  );
+  await authenticateToMailgun();
   debugger;
 
 
