@@ -75,14 +75,41 @@ const displayListInfo = async () => {
 
 
 
+
+
+
+
+
+
 const displaySubscribedListMembers = async (order) => {
+  debugger
+  await establishSubscribedListMembers( () => {
+    debugger
+    // Now we need to order listMembers based on the mailgunMateScheduledSends date.    
+
+
+    const orderedSubscribedListMembers = internals.subscribedListMembers.reduce( (accumulatedAddresses, member) =>  `${accumulatedAddresses}\n${member.address}`, '');
+    console.log(orderedSubscribedListMembers);
+
+  });
+
+};
+
+
+
+
+
+
+
+
+const establishSubscribedListMembers = async (workWithListMembersOnceEstablished) => {
   debugger;
   await displayListInfo();
-  const mailgunMsxPageSize = 100;
+  const mailgunMaxPageSize = 100;
   let listMembers;
 
 
-  await internals.list.members().pages().page({subscribed: true, limit: mailgunMsxPageSize}).then(
+  await internals.list.members().pages().page({subscribed: true, limit: mailgunMaxPageSize}).then(
     async function (list) {
       debugger;
 
@@ -95,7 +122,8 @@ const displaySubscribedListMembers = async (order) => {
         await internals.mailgun.get(nextPage).then(
           (page) => {
             debugger;
-            nextPage = page.items.length === mailgunMsxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
+            // Todo: KC: Test with list > 200 members.
+            nextPage = page.items.length === mailgunMaxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
             listMembers = listMembers.concat(page.items);
           }, (err) => {
             debugger;
@@ -104,13 +132,10 @@ const displaySubscribedListMembers = async (order) => {
           }
         );
       }
-      // Now we need to order listMembers based on the mailgunMateScheduledSends date.
 
-      
-      debugger;
-      const orderedSubscribedListMembers = listMembers.reduce( (accumulatedAddresses, member) =>  `${accumulatedAddresses}\n${member.address}`, '');
-      console.log(orderedSubscribedListMembers);
-   
+      internals.subscribedListMembers = listMembers;
+
+      workWithListMembersOnceEstablished();
 
       debugger;
 
@@ -124,6 +149,23 @@ const displaySubscribedListMembers = async (order) => {
       console.log(`Error occured while attempting to retrieve the mail list members. Error was: "${err}"`);
     }
   );
+};
+
+
+
+
+
+
+
+
+
+
+
+const establishSubscribedListMembersForSelection = async () => {
+
+  await establishSubscribedListMembers( () => {
+    internals.candidatesForCheckListSelection = internals.subscribedListMembers.map(member => ({name: `${member.name} <${member.address}>`, value: member.address}) );
+  });
 
 };
 
@@ -131,32 +173,8 @@ const displaySubscribedListMembers = async (order) => {
 
 
 
-const establishSubscribedListMembers = async () => {
 
-  await displayListInfo();
 
-  await internals.list.members().list().then(
-    function (members) {
-      debugger;
-      // `members` is the list of members
-      console.log(members);  
-
-   
-      internals.subscribedListMembers = members.items.filter(item => item.subscribed)
-      debugger;
-      internals.candidatesForCheckListSelection = internals.subscribedListMembers.map(member => ({name: `${member.name} <${member.address}>`, value: member.address}) )
-    }, (err) => {
-      debugger;
-      if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
-        console.log('Authentication unsuccessful! Feel free to try again.');
-        console.log(`Retrieving mail list mebers was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
-        process.exit(9);
-      }
-      console.log(`Error occured while attempting to retrieve the mail list members. Error was: "${err}"`);
-    }
-  );
-
-};
 
 internals.scheduleEmailBatch = async () => {
   debugger;
@@ -443,7 +461,7 @@ exports.run = async (parsedArgv, context) => {
 
 
 
-  await establishSubscribedListMembers();
+  await establishSubscribedListMembersForSelection();
 
   await emailCheckBoxPrompt({
     type: 'checkbox',
