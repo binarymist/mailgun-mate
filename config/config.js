@@ -27,7 +27,7 @@ const schema = {
     default: ''
   },
   'o:testmode': {
-    doc: 'Whether you would like to send emails in test mode of not (https://documentation.mailgun.com/en/latest/user_manual.html#sending-in-test-mode).',
+    doc: 'Whether you would like to send emails in test mode of not (https://documentation.mailgun.com/en/latest/user_manual.html#sending-in-test-mode). This can be overridden by passing it in on the command line.',
     format: 'Boolean',
     default: true
   },

@@ -3,11 +3,13 @@
     "level": "debug"  
   },
   "emailList": "test@mailgun.you.com",
+  "o:testmode": true,
   "domain": "mailgun.you.com",
   "mailgunTimeFormat": "ddd-DD-MMM-YYYY-HHmmss-ZZ",
   "mailgunMaxFutureScheduleInDays": 3,
   "emailBodyFileDir": "/mail-outs/",
   "displayOrderOfListMemberScheduledSends": "des",
-  "emailToSiblingFieldPadWidth": 50
+  "emailToSiblingFieldPadWidth": 42,
+  "pageSizeOfCandidatesForCheckListSelection": 50
 }
 
