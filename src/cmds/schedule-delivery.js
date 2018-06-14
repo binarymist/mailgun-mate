@@ -114,12 +114,14 @@ const displaySubscribedListMembers = async (order) => {
 
     if (order === 'des') orderedDisplayableSubscribedListMembers.reverse();
 
-    const printJob = orderedDisplayableSubscribedListMembers.reduce( 
+
+    console.log(`\n${'Ordered Subscribed Members'.padEnd(config.get('emailToSiblingFieldPadWidth'))}DateTime Scheduled` + '\n' + 
+    orderedDisplayableSubscribedListMembers.reduce( 
       (accumulated, member) => 
         `${accumulated}\n${`${member.address}`.padEnd(config.get('emailToSiblingFieldPadWidth'))}${member.latestScheduledSend}`
         , ''
-    );
-    console.log(printJob);
+    ));
+    
 
   });
 
@@ -343,7 +345,7 @@ exports.setup = (sywac) => {
       type: 'boolean', desc: 'Whether or not to send in test mode "o:testmode".', strict: true, defaultValue: config.get('o:testmode')
     }
   )  // Todo: KC: If the following command call exists, then the schedule-delivery command is broken. Uncomment to run list.
-  .command('list', {
+  /*.command('list', {
 
     desc: 'List members in order based on latest or oldest mailgunMateScheduledSends datetimes.',
     paramsDesc: 'The order to list the items in: "des" for descending, "asc" for ascending.',
@@ -387,7 +389,7 @@ exports.setup = (sywac) => {
     }
 
 
-  })
+  })*/
   // Todo: KC: Following command should provide context sensitive help for the list command, but it doesn't work
   /*.command('*', {
     desc: 'Default command for schedule-delivery.',
@@ -484,7 +486,7 @@ exports.run = async (parsedArgv, context) => {
     name: 'targetEmailAddresses',
     message: 'Which list members would you like to target? You can select up to 1000.',
     choices: internals.candidatesForCheckListSelection,
-    pageSize: 20
+    pageSize: config.get('pageSizeOfCandidatesForCheckListSelection')
   }).then((answers) => {
       debugger;
       internals.emailProps.to = answers.targetEmailAddresses;

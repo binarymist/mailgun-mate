@@ -60,6 +60,11 @@ const schema = {
     doc: 'The pading between the end of the listed displayed email address and the next field.',
     format: 'int',
     default: 50
+  },
+  pageSizeOfCandidatesForCheckListSelection: {
+    doc: 'The number of records you would like to see at any given time on your terminal to be able to select for scheduling.',
+    format: 'int',
+    default: 20
   }
 };
 
