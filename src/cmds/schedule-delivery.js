@@ -81,44 +81,19 @@ const displayListInfo = async () => {
 
 
 
-const displaySubscribedListMembers = async (order) => {
+const displaySubscribedListMembers = async () => {
   debugger
-  await establishSubscribedListMembers( () => {
+  await establishSubscribedListMembersAndSort( (orderedDisplayableSubscribedListMembers) => {
     debugger
-    // Now we need to order listMembers based on the mailgunMateScheduledSends date.    
-
-    const theyAreTheSame = 0;
-    const aIsLessThanB = -1;
-    const aIsGreaterThanB = 1;
-    const dateTimePart = 1;
-
-    let displayDate;
-
-    const displayableSubscribedListMembers = internals.subscribedListMembers.map((listMember) => {
-      if (listMember.vars.mailgunMateScheduledSends) {
-        const dateTimes = listMember.vars.mailgunMateScheduledSends.map( scheduledSend => scheduledSend[dateTimePart] );
-        const sortedDateTimes = dateTimes.sort();
-        const greatestDateTime = sortedDateTimes[sortedDateTimes.length -1];
-        displayDate = greatestDateTime;
-      } else {
-        displayDate = '';
-      }
-      return { address: listMember.address, latestScheduledSend: displayDate };
-    });    
-
-    let orderedDisplayableSubscribedListMembers = displayableSubscribedListMembers.sort((a, b) => {
-      if (a.latestScheduledSend < b.latestScheduledSend) return aIsLessThanB;
-      if (a.latestScheduledSend > b.latestScheduledSend) return aIsGreaterThanB;
-      return theyAreTheSame;
-    });
-
-    if (order === 'des') orderedDisplayableSubscribedListMembers.reverse();
 
 
-    console.log(`\n${'Ordered Subscribed Members'.padEnd(config.get('emailToSiblingFieldPadWidth'))}DateTime Scheduled` + '\n' + 
+
+
+
+    console.log(`\n${'Ordered Subscribed Members'.padEnd(config.get('valueToSiblingFieldPadWidth'))}DateTime Scheduled` + '\n' + 
     orderedDisplayableSubscribedListMembers.reduce( 
       (accumulated, member) => 
-        `${accumulated}\n${`${member.address}`.padEnd(config.get('emailToSiblingFieldPadWidth'))}${member.latestScheduledSend}`
+        `${accumulated}\n${`${member.address}`.padEnd(config.get('valueToSiblingFieldPadWidth'))}${member.latestScheduledSend}`
         , ''
     ));
     
@@ -130,7 +105,7 @@ const displaySubscribedListMembers = async (order) => {
 
 
 
-const establishSubscribedListMembers = async (workWithListMembersOnceEstablished) => {
+const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEstablished) => {
   debugger;
   await displayListInfo();
   const mailgunMaxPageSize = 100;
@@ -163,7 +138,40 @@ const establishSubscribedListMembers = async (workWithListMembersOnceEstablished
 
       internals.subscribedListMembers = listMembers;
       debugger;
-      workWithListMembersOnceEstablished();
+
+
+      // Now we need to order listMembers based on the mailgunMateScheduledSends date.
+      const theyAreTheSame = 0;
+      const aIsLessThanB = -1;
+      const aIsGreaterThanB = 1;
+      const dateTimePart = 1;
+
+      let displayDate;
+
+      const displayableSubscribedListMembers = internals.subscribedListMembers.map((listMember) => {
+        if (listMember.vars.mailgunMateScheduledSends) {
+          const dateTimes = listMember.vars.mailgunMateScheduledSends.map( scheduledSend => scheduledSend[dateTimePart] );
+          const sortedDateTimes = dateTimes.sort();
+          const greatestDateTime = sortedDateTimes[sortedDateTimes.length -1];
+          displayDate = greatestDateTime;
+        } else {
+          displayDate = '';
+        }
+        return { address: listMember.address, latestScheduledSend: displayDate, name: listMember.name };
+      });    
+
+      let orderedDisplayableSubscribedListMembers = displayableSubscribedListMembers.sort((a, b) => {
+        if (a.latestScheduledSend < b.latestScheduledSend) return aIsLessThanB;
+        if (a.latestScheduledSend > b.latestScheduledSend) return aIsGreaterThanB;
+        return theyAreTheSame;
+      });
+
+      if (internals.listMemberDispalyOrder === 'des') orderedDisplayableSubscribedListMembers.reverse();
+
+
+
+      debugger;
+      workWithListMembersOnceEstablished(orderedDisplayableSubscribedListMembers);
       debugger;
 
     }, (err) => {
@@ -181,8 +189,8 @@ const establishSubscribedListMembers = async (workWithListMembersOnceEstablished
 
 
 const establishSubscribedListMembersForSelection = async () => {
-  await establishSubscribedListMembers( () => {
-    internals.candidatesForCheckListSelection = internals.subscribedListMembers.map(member => ({name: `${member.name} <${member.address}>`, value: member.address}) );
+  await establishSubscribedListMembersAndSort( (orderedDisplayableSubscribedListMembers) => {
+    internals.candidatesForCheckListSelection = orderedDisplayableSubscribedListMembers.map(member => ({name: `${member.name.padEnd(config.get('valueToSiblingFieldPadWidth'))} ${member.address.padEnd(config.get('valueToSiblingFieldPadWidth'))}${member.latestScheduledSend}`, value: member.address}) );
   });
 };
 
@@ -221,6 +229,7 @@ internals.scheduleEmailBatch = async () => {
         chosenSubscribedListMembers.forEach(listMember => console.log(`${listMember.address} `));
         debugger;
         // Todo: KC: Currently internals.scheduledSendDateTime is being assigned in the run routine, as the mailgunDateTimeFormat.validateValue is broken.
+        // So currently no datetime validation. If date is entered in the past, the eamil will be sent immediatly, but recorded as being sent in the past at the time that was given to mailgun-mate.
         const scheduledSendToAdd = [`${internals.emailBodyFile}`, moment(internals.scheduledSendDateTime).format('YYYY-MM-DD_HH:mm:ss')];
 
         const promiseOfUpdateListMembers = chosenSubscribedListMembers.map((memberRecord) => {
@@ -238,7 +247,7 @@ internals.scheduleEmailBatch = async () => {
             await internals.list.members(memberRecord.address).update(newMemberRecord)
               .then((data) => {
                 debugger;
-                console.log(`address: ${`${data.member.address},`.padEnd(config.get('emailToSiblingFieldPadWidth'))} message: ${data.message}`);
+                console.log(`address: ${`${data.member.address},`.padEnd(config.get('valueToSiblingFieldPadWidth'))} message: ${data.message}`);
                 resolve(`Resolved promise for memberRecord ${newMemberRecord}`);
               }, (err) => {
                 debugger;
@@ -345,7 +354,7 @@ exports.setup = (sywac) => {
       type: 'boolean', desc: 'Whether or not to send in test mode "o:testmode".', strict: true, defaultValue: config.get('o:testmode')
     }
   )  // Todo: KC: If the following command call exists, then the schedule-delivery command is broken. Uncomment to run list.
-  /*.command('list', {
+/*  .command('list', {
 
     desc: 'List members in order based on latest or oldest mailgunMateScheduledSends datetimes.',
     paramsDesc: 'The order to list the items in: "des" for descending, "asc" for ascending.',
@@ -367,6 +376,7 @@ exports.setup = (sywac) => {
     run: async (parsedArgv, context) => {
       const argv = parsedArgv;
       debugger;
+      internals.listMemberDispalyOrder = argv.o;
 
       if (parsedArgv.l) {
         internals.mailList = parsedArgv.l;  
@@ -380,7 +390,7 @@ exports.setup = (sywac) => {
 
       await authenticateToMailgun();
       debugger;
-      await displaySubscribedListMembers(argv.o);
+      await displaySubscribedListMembers();
       
 
 
@@ -414,9 +424,7 @@ exports.setup = (sywac) => {
 exports.run = async (parsedArgv, context) => {
   debugger;
   const argv = parsedArgv;
-  let subject;
-
-  
+  let subject;  
 
   if (parsedArgv.l) {
     internals.mailList = parsedArgv.l;  
@@ -456,7 +464,8 @@ exports.run = async (parsedArgv, context) => {
   if (parsedArgv.t) {
     debugger;
     internals.emailProps['o:deliverytime'] = parsedArgv.t;
-    
+    // Todo: KC: Remove once the mailgunDateTimeFormat.validateValue is working.
+    internals.scheduledSendDateTime = parsedArgv.t;
   } else {
     debugger;
     return context.cliMessage('You must provide a valid schedule time.');

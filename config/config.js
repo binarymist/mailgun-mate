@@ -56,7 +56,7 @@ const schema = {
     format: ['asc', 'des'],
     default: 'asc'
   },
-  emailToSiblingFieldPadWidth: {
+  valueToSiblingFieldPadWidth: {
     doc: 'The pading between the end of the listed displayed email address and the next field.',
     format: 'int',
     default: 50
