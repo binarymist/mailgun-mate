@@ -6,6 +6,8 @@
   "domain": "mailgun.you.com",
   "mailgunTimeFormat": "ddd-DD-MMM-YYYY-HHmmss-ZZ",
   "mailgunMaxFutureScheduleInDays": 3,
-  "emailBodyFileDir": "~/mail-outs/"
+  "emailBodyFileDir": "/mail-outs/",
+  "displayOrderOfListMemberScheduledSends": "des",
+  "emailToSiblingFieldPadWidth": 50
 }
 

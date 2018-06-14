@@ -49,7 +49,17 @@ const schema = {
   emailBodyFileDir: {
     doc: 'The directory that email body files are located.',
     format: String,
-    default: '~/mail-outs/'
+    default: '/mail-outs/'
+  },
+  displayOrderOfListMemberScheduledSends: {
+    doc: 'The order that the subscribed list members should appear in based on their scheduled email sends.',
+    format: ['asc', 'des'],
+    default: 'asc'
+  },
+  emailToSiblingFieldPadWidth: {
+    doc: 'The pading between the end of the listed displayed email address and the next field.',
+    format: 'int',
+    default: 50
   }
 };
 

@@ -59,7 +59,7 @@ const displayListInfo = async () => {
       const { list: { access_level, address, created_at, description, members_count, name } } = data;
       console.log('Authentication successful!');
       console.log('Details for the list you selected follows:');
-      console.log(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (that\'s subscribed and unsubscribed) \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
+      console.log(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (subscribed and unsubscribed inclusive) \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
     }, function (err) {
       debugger;
       if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
@@ -87,17 +87,43 @@ const displaySubscribedListMembers = async (order) => {
     debugger
     // Now we need to order listMembers based on the mailgunMateScheduledSends date.    
 
+    const theyAreTheSame = 0;
+    const aIsLessThanB = -1;
+    const aIsGreaterThanB = 1;
+    const dateTimePart = 1;
 
-    const orderedSubscribedListMembers = internals.subscribedListMembers.reduce( (accumulatedAddresses, member) =>  `${accumulatedAddresses}\n${member.address}`, '');
-    console.log(orderedSubscribedListMembers);
+    let displayDate;
+
+    const displayableSubscribedListMembers = internals.subscribedListMembers.map((listMember) => {
+      if (listMember.vars.mailgunMateScheduledSends) {
+        const dateTimes = listMember.vars.mailgunMateScheduledSends.map( scheduledSend => scheduledSend[dateTimePart] );
+        const sortedDateTimes = dateTimes.sort();
+        const greatestDateTime = sortedDateTimes[sortedDateTimes.length -1];
+        displayDate = greatestDateTime;
+      } else {
+        displayDate = '';
+      }
+      return { address: listMember.address, latestScheduledSend: displayDate };
+    });    
+
+    let orderedDisplayableSubscribedListMembers = displayableSubscribedListMembers.sort((a, b) => {
+      if (a.latestScheduledSend < b.latestScheduledSend) return aIsLessThanB;
+      if (a.latestScheduledSend > b.latestScheduledSend) return aIsGreaterThanB;
+      return theyAreTheSame;
+    });
+
+    if (order === 'des') orderedDisplayableSubscribedListMembers.reverse();
+
+    const printJob = orderedDisplayableSubscribedListMembers.reduce( 
+      (accumulated, member) => 
+        `${accumulated}\n${`${member.address}`.padEnd(config.get('emailToSiblingFieldPadWidth'))}${member.latestScheduledSend}`
+        , ''
+    );
+    console.log(printJob);
 
   });
 
 };
-
-
-
-
 
 
 
@@ -122,7 +148,7 @@ const establishSubscribedListMembers = async (workWithListMembersOnceEstablished
         await internals.mailgun.get(nextPage).then(
           (page) => {
             debugger;
-            // Todo: KC: Test with list > 200 members.
+            // Todo: KC: Test with list > 200 members and teast with a list of 0 members.
             nextPage = page.items.length === mailgunMaxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
             listMembers = listMembers.concat(page.items);
           }, (err) => {
@@ -134,9 +160,8 @@ const establishSubscribedListMembers = async (workWithListMembersOnceEstablished
       }
 
       internals.subscribedListMembers = listMembers;
-
+      debugger;
       workWithListMembersOnceEstablished();
-
       debugger;
 
     }, (err) => {
@@ -153,25 +178,11 @@ const establishSubscribedListMembers = async (workWithListMembersOnceEstablished
 
 
 
-
-
-
-
-
-
-
-
 const establishSubscribedListMembersForSelection = async () => {
-
   await establishSubscribedListMembers( () => {
     internals.candidatesForCheckListSelection = internals.subscribedListMembers.map(member => ({name: `${member.name} <${member.address}>`, value: member.address}) );
   });
-
 };
-
-
-
-
 
 
 
@@ -199,7 +210,6 @@ internals.scheduleEmailBatch = async () => {
   await internals.mailgun.messages().send(internals.emailProps).then(
     async (data) => {
       debugger;
-      console.log(data);
 
       // If was successfully received by mailgun, we need to update the recipientVars of the chosenSubscribedListMembers with the date and the name of the email body file.
       
@@ -208,9 +218,10 @@ internals.scheduleEmailBatch = async () => {
         console.log('Now updating the following list Members:');
         chosenSubscribedListMembers.forEach(listMember => console.log(`${listMember.address} `));
         debugger;
+        // Todo: KC: Currently internals.scheduledSendDateTime is being assigned in the run routine, as the mailgunDateTimeFormat.validateValue is broken.
         const scheduledSendToAdd = [`${internals.emailBodyFile}`, moment(internals.scheduledSendDateTime).format('YYYY-MM-DD_HH:mm:ss')];
 
-        const prmoseOfUpdateListMembers = chosenSubscribedListMembers.map((memberRecord) => {
+        const promiseOfUpdateListMembers = chosenSubscribedListMembers.map((memberRecord) => {
 
           return new Promise (async (resolve, reject) => {
 
@@ -225,7 +236,7 @@ internals.scheduleEmailBatch = async () => {
             await internals.list.members(memberRecord.address).update(newMemberRecord)
               .then((data) => {
                 debugger;
-                console.log(`address: ${`${data.member.address},`.padEnd(30)} message: ${data.message}`);
+                console.log(`address: ${`${data.member.address},`.padEnd(config.get('emailToSiblingFieldPadWidth'))} message: ${data.message}`);
                 resolve(`Resolved promise for memberRecord ${newMemberRecord}`);
               }, (err) => {
                 debugger;
@@ -240,7 +251,7 @@ internals.scheduleEmailBatch = async () => {
     
         });
         debugger;
-        await Promise.all(prmoseOfUpdateListMembers).catch(reason => console.log(reason.message));
+        await Promise.all(promiseOfUpdateListMembers).catch(reason => console.log(reason.message));
 
       }
 
@@ -294,7 +305,7 @@ exports.description = 'Launch scheduled mail delivery, max of three days in adva
 exports.setup = (sywac) => {
   debugger;
   sywac
-  .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts))
+// Todo: KC: .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts)) // Currently breaks https://github.com/sywac/sywac/issues/21
   .option(
     '-l, --email-list <email-list>',
     {
@@ -322,7 +333,8 @@ exports.setup = (sywac) => {
   .option(
     '-t, --schedule-time <time-to-schedule-email-send-for>',
     {
-      type: 'mailgunDateTimeFormat', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true
+      //type: 'mailgunDateTimeFormat', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true // As above, this is broken.
+      type: 'string', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true
     }
   )
   .option(
@@ -330,7 +342,7 @@ exports.setup = (sywac) => {
     {
       type: 'boolean', desc: 'Whether or not to send in test mode "o:testmode".', strict: true, defaultValue: config.get('o:testmode')
     }
-  )
+  )  // Todo: KC: If the following command call exists, then the schedule-delivery command is broken. Uncomment to run list.
   .command('list', {
 
     desc: 'List members in order based on latest or oldest mailgunMateScheduledSends datetimes.',
@@ -344,9 +356,9 @@ exports.setup = (sywac) => {
         }
       )
       .option(   
-        '-o, --order [order]',
+        '-o, --order [des|asc(default)]',
         {
-          type: 'array:enum', choices: ['des', 'asc'], desc: 'Which order would you like the items displayed in.', defaultValue: 'asc'
+          type: 'string', desc: 'Which order would you like the items displayed in.', defaultValue: config.get('displayOrderOfListMemberScheduledSends')
         }
       );
     },
@@ -376,6 +388,7 @@ exports.setup = (sywac) => {
 
 
   })
+  // Todo: KC: Following command should provide context sensitive help for the list command, but it doesn't work
   /*.command('*', {
     desc: 'Default command for schedule-delivery.',
     setup: (sywac) => {
@@ -393,9 +406,11 @@ exports.setup = (sywac) => {
       return argv;
       //argv.handled = true;
     }
-  })*/;
+  })*/
+  ;
 };
 exports.run = async (parsedArgv, context) => {
+  debugger;
   const argv = parsedArgv;
   let subject;
 
@@ -439,6 +454,7 @@ exports.run = async (parsedArgv, context) => {
   if (parsedArgv.t) {
     debugger;
     internals.emailProps['o:deliverytime'] = parsedArgv.t;
+    
   } else {
     debugger;
     return context.cliMessage('You must provide a valid schedule time.');
