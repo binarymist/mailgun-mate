@@ -17,12 +17,9 @@ class mailgunDateTimeFormat extends Type {
     return 'mailgunDateTimeFormat'
   }
   setValue (context, value) {
-    
-    debugger;
     context.assignValue(this.id, value);
   }
   validateValue (value) {
-    debugger;
     // https://momentjs.com/docs/#/parsing/string-format/
     const scheduledTime = moment(value, config.get('mailgunTimeFormat'))
     internals.scheduleDateIsValid = scheduledTime.isValid();
@@ -37,7 +34,6 @@ class mailgunDateTimeFormat extends Type {
   }
   buildInvalidMessage (context, msgAndArgs) {
     let customMessage;
-    debugger;
     super.buildInvalidMessage(context, msgAndArgs);
 
     if (!internals.scheduleDateIsValid) customMessage = `The datetime you entered was not valid according to mailgun\'s rules. RFC 2822, formatted as mailgun requires "${config.get('mailgunTimeFormat')}", See (https://documentation.mailgun.com/en/latest/user_manual.html#scheduling-delivery) for more information.`;
@@ -49,20 +45,16 @@ class mailgunDateTimeFormat extends Type {
 
 
 const displayListInfo = async () => {
-
   internals.list = internals.mailgun.lists(internals.mailList);
-
 
   await internals.list.info().then(
     function (data) {
       // `data` is mailing list info
-      debugger;
       const { list: { access_level, address, created_at, description, members_count, name } } = data;
       console.log('Authentication successful!');
       console.log('Details for the list you selected follows:');
       console.log(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (subscribed and unsubscribed inclusive) \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
     }, function (err) {
-      debugger;
       if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
         console.log('Authentication unsuccessful! Feel free to try again.');
         console.log(`Retrieving mail list "${internals.mailList}" was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
@@ -71,57 +63,32 @@ const displayListInfo = async () => {
       console.log(`Error occured while attempting to retrieve the mail list info. Error was: "${err}"`);
     }
   );
-
 };
 
 
-
-
-
-
-
-
-
 const displaySubscribedListMembers = async () => {
-  debugger
   await establishSubscribedListMembersAndSort( (orderedDisplayableSubscribedListMembers) => {
-    debugger
-
-
-
-
-
     console.log(`\n${'Ordered Subscribed Members'.padEnd(config.get('valueToSiblingFieldPadWidth'))}DateTime Scheduled` + '\n' + 
     orderedDisplayableSubscribedListMembers.reduce( 
       (accumulated, member) => 
         `${accumulated}\n${`${member.address}`.padEnd(config.get('valueToSiblingFieldPadWidth'))}${member.latestScheduledSend}`
         , ''
     ));
-    
-
   });
-
 };
 
 
-
-
 const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEstablished) => {
-
   await displayListInfo();
   const mailgunMaxPageSize = 100;
   let listMembers;
 
-
   await internals.list.members().pages().page({subscribed: true, limit: mailgunMaxPageSize}).then(
     async function (list) {
-
-
       listMembers = list.items;
       let nextPage = list.paging.next.split('https://api.mailgun.net/v3')[1];
 
       while (nextPage) {
-      
         await internals.mailgun.get(nextPage).then(
           (page) => {
             nextPage = page.items.length === mailgunMaxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
@@ -134,8 +101,6 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
       }
 
       internals.subscribedListMembers = listMembers;
-
-
 
       // Now we need to order listMembers based on the mailgunMateScheduledSends date.
       const theyAreTheSame = 0;
@@ -165,14 +130,9 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
 
       if (internals.listMemberDispalyOrder === 'des') orderedDisplayableSubscribedListMembers.reverse();
 
-
-
-
       workWithListMembersOnceEstablished(orderedDisplayableSubscribedListMembers);
 
-
     }, (err) => {
-      debugger;
       if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
         console.log('Authentication unsuccessful! Feel free to try again.');
         console.log(`Retrieving mail list mebers was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
@@ -206,15 +166,12 @@ const promptForTagsToAddToBatch = async () => {
       return true;
     }
   }).then((answers) => {
-      debugger;
       if (answers.tagsToAddToBatch) internals.emailProps['o:tag'] = answers.tagsToAddToBatch.split(',').map(tag => tag.trim());
     }, (err) => {
-      debugger;
       console.log(err);
     }
   );
 };
-
 
 
 // Batching with mailgun: https://documentation.mailgun.com/en/latest/user_manual.html#batch-sending
@@ -243,20 +200,18 @@ internals.scheduleEmailBatch = async () => {
 
   await internals.mailgun.messages().send(internals.emailProps).then(
     async (data) => {
-
       // If was successfully received by mailgun, we need to update the recipientVars of the chosenSubscribedListMembers with the date and the name of the email body file.
       
       if (data.id && data.message === 'Queued. Thank you.') {
         console.log(`Emails were scheduled. Response from mailgun was:\nid: "${data.id}"\nmessage: "${data.message}"`);
         console.log('Now updating the following list Members:');
         chosenSubscribedListMembers.forEach(listMember => console.log(`${listMember.address} `));
-        debugger;
+
         // Todo: KC: Currently internals.scheduledSendDateTime is being assigned in the run routine, as the mailgunDateTimeFormat.validateValue is broken.
         // So currently no datetime validation. If date is entered in the past, the eamil will be sent immediatly, but recorded as being sent in the past at the time that was given to mailgun-mate.
         const scheduledSendToAdd = [`${internals.emailBodyFile}`, moment(internals.scheduledSendDateTime).format('YYYY-MM-DD_HH:mm:ss')];
         const promiseOfUpdateListMembers = chosenSubscribedListMembers.map((memberRecord) => {
           return new Promise (async (resolve, reject) => {
-            debugger;
             const newMemberRecord = memberRecord;
             newMemberRecord.subscribed = newMemberRecord.subscribed ? 'true' : 'false'; // Stupid hack cos mailgun expects the true or false to be strings, yet they provide the value as boolean.
             const mailgunMateScheduledSends = memberRecord.vars.mailgunMateScheduledSends ? memberRecord.vars.mailgunMateScheduledSends.concat([scheduledSendToAdd]) : [scheduledSendToAdd];
@@ -264,15 +219,11 @@ internals.scheduleEmailBatch = async () => {
 
             await internals.list.members(memberRecord.address).update(newMemberRecord)
               .then((data) => {
-
                 console.log(`address: ${`${data.member.address},`.padEnd(config.get('valueToSiblingFieldPadWidth'))} message: ${data.message}`);
                 resolve(`Resolved promise for memberRecord ${newMemberRecord}`);
               }, (err) => {
-                debugger;
                 reject(err);
               });
-
-
           });    
         });
 
@@ -287,15 +238,11 @@ internals.scheduleEmailBatch = async () => {
 
 
 const authenticateToMailgun = async () => {
-
-
   await apiKeyPrompt({
     type: 'password',
     name: 'apiKey',
     message: 'Please enter your mailgun apiKey.'    
   }).then((answer) => {
-
-
       internals.mailgun = require('mailgun-js')({apiKey: answer.apiKey, domain: internals.mgDomain})
     }, (err) => {
       console.log(err);
@@ -471,10 +418,6 @@ exports.run = async (parsedArgv, context) => {
 
   await authenticateToMailgun();
 
-
-
-
-
   await establishSubscribedListMembersForSelection();
 
   // Todo: KC: Extract to method.
@@ -500,19 +443,11 @@ exports.run = async (parsedArgv, context) => {
 
   await internals.scheduleEmailBatch();
 
-
-
-
-
-
-
     // Todo: KC: deserialise configFileContents
     //    https://github.com/danivek/json-api-serializer looks to be well maintained.
     //    https://github.com/SeyZ/jsonapi-serializer     looks to be a little neglected.
 
     // Todo: KC: Validate object graph using Joi. Look at using the same validation in the Orchestrator as well.
-
-
 
   argv.handled = true;
 };
