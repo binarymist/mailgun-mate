@@ -1,6 +1,7 @@
 const readFileAsync = require('util').promisify(require('fs').readFile);
 const inquirer = require('inquirer');
 const emailCheckBoxPrompt = inquirer.createPromptModule();
+const tagInputPrompt = inquirer.createPromptModule();
 const apiKeyPrompt = inquirer.createPromptModule();
 const config = require('config/config');
 
@@ -48,10 +49,10 @@ class mailgunDateTimeFormat extends Type {
 
 
 const displayListInfo = async () => {
-  debugger;
+
   internals.list = internals.mailgun.lists(internals.mailList);
 
-  debugger;
+
   await internals.list.info().then(
     function (data) {
       // `data` is mailing list info
@@ -106,7 +107,7 @@ const displaySubscribedListMembers = async () => {
 
 
 const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEstablished) => {
-  debugger;
+
   await displayListInfo();
   const mailgunMaxPageSize = 100;
   let listMembers;
@@ -114,22 +115,18 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
 
   await internals.list.members().pages().page({subscribed: true, limit: mailgunMaxPageSize}).then(
     async function (list) {
-      debugger;
+
 
       listMembers = list.items;
       let nextPage = list.paging.next.split('https://api.mailgun.net/v3')[1];
 
       while (nextPage) {
-        debugger
       
         await internals.mailgun.get(nextPage).then(
           (page) => {
-            debugger;
-            // Todo: KC: Test with list > 200 members and teast with a list of 0 members.
             nextPage = page.items.length === mailgunMaxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
             listMembers = listMembers.concat(page.items);
           }, (err) => {
-            debugger;
             console.log(`There was a problem getting subsequent pages from the mail list. The error was: ${err}`);
             process.exit(9);
           }
@@ -137,7 +134,7 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
       }
 
       internals.subscribedListMembers = listMembers;
-      debugger;
+
 
 
       // Now we need to order listMembers based on the mailgunMateScheduledSends date.
@@ -170,9 +167,9 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
 
 
 
-      debugger;
+
       workWithListMembersOnceEstablished(orderedDisplayableSubscribedListMembers);
-      debugger;
+
 
     }, (err) => {
       debugger;
@@ -187,7 +184,6 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
 };
 
 
-
 const establishSubscribedListMembersForSelection = async () => {
   await establishSubscribedListMembersAndSort( (orderedDisplayableSubscribedListMembers) => {
     internals.candidatesForCheckListSelection = orderedDisplayableSubscribedListMembers.map(member => ({name: `${member.name.padEnd(config.get('valueToSiblingFieldPadWidth'))} ${member.address.padEnd(config.get('valueToSiblingFieldPadWidth'))}${member.latestScheduledSend}`, value: member.address}) );
@@ -195,11 +191,35 @@ const establishSubscribedListMembersForSelection = async () => {
 };
 
 
+const promptForTagsToAddToBatch = async () => {
+  // Can add from 0 to 3 tags:
+  //   https://documentation.mailgun.com/en/latest/user_manual.html#tagging
+  //   https://documentation.mailgun.com/en/latest/user_manual.html#batch-sending
+
+  await tagInputPrompt({
+    type: 'input',
+    name: 'tagsToAddToBatch',
+    message: 'Would you like to add any tags? You can add up to three, seperated by commas.',
+    validate: (userInput, answersHash) => {
+      // Todo: KC: provide validation.
+      // Tags are case insensitive and should be ascii only. Maximum tag length is 128 characters.
+      return true;
+    }
+  }).then((answers) => {
+      debugger;
+      if (answers.tagsToAddToBatch) internals.emailProps['o:tag'] = answers.tagsToAddToBatch.split(',').map(tag => tag.trim());
+    }, (err) => {
+      debugger;
+      console.log(err);
+    }
+  );
+};
 
 
-internals.scheduleEmailBatch = async () => {
-  debugger;
 
+// Batching with mailgun: https://documentation.mailgun.com/en/latest/user_manual.html#batch-sending
+// Batching via the mailgun-js abstraction: https://github.com/bojand/mailgun-js/blob/master/docs/batch.md
+const addChosenMembersToBatch = () => {
   const recipientVars = {};
 
   const chosenSubscribedListMembers = internals.subscribedListMembers.filter((subscribedListMember) => {
@@ -212,14 +232,17 @@ internals.scheduleEmailBatch = async () => {
 
   chosenSubscribedListMembers.forEach(member => {
     recipientVars[member.address] = member.vars;
-  });
-  
+  });  
   internals.emailProps['recipient-variables'] = recipientVars;
-  debugger;
+  return chosenSubscribedListMembers;
+}
+
+
+internals.scheduleEmailBatch = async () => {
+  const chosenSubscribedListMembers = addChosenMembersToBatch();
 
   await internals.mailgun.messages().send(internals.emailProps).then(
     async (data) => {
-      debugger;
 
       // If was successfully received by mailgun, we need to update the recipientVars of the chosenSubscribedListMembers with the date and the name of the email body file.
       
@@ -231,13 +254,8 @@ internals.scheduleEmailBatch = async () => {
         // Todo: KC: Currently internals.scheduledSendDateTime is being assigned in the run routine, as the mailgunDateTimeFormat.validateValue is broken.
         // So currently no datetime validation. If date is entered in the past, the eamil will be sent immediatly, but recorded as being sent in the past at the time that was given to mailgun-mate.
         const scheduledSendToAdd = [`${internals.emailBodyFile}`, moment(internals.scheduledSendDateTime).format('YYYY-MM-DD_HH:mm:ss')];
-
         const promiseOfUpdateListMembers = chosenSubscribedListMembers.map((memberRecord) => {
-
           return new Promise (async (resolve, reject) => {
-
-
-
             debugger;
             const newMemberRecord = memberRecord;
             newMemberRecord.subscribed = newMemberRecord.subscribed ? 'true' : 'false'; // Stupid hack cos mailgun expects the true or false to be strings, yet they provide the value as boolean.
@@ -246,29 +264,23 @@ internals.scheduleEmailBatch = async () => {
 
             await internals.list.members(memberRecord.address).update(newMemberRecord)
               .then((data) => {
-                debugger;
+
                 console.log(`address: ${`${data.member.address},`.padEnd(config.get('valueToSiblingFieldPadWidth'))} message: ${data.message}`);
                 resolve(`Resolved promise for memberRecord ${newMemberRecord}`);
               }, (err) => {
                 debugger;
                 reject(err);
               });
-            debugger;
 
 
-
-          }); // End of promise
-
-    
+          });    
         });
-        debugger;
-        await Promise.all(promiseOfUpdateListMembers).catch(reason => console.log(reason.message));
 
+        await Promise.all(promiseOfUpdateListMembers).catch(reason => console.log(reason.message));
       }
 
     }, (err) => {
       console.log(`There was a problem scheduling the eamils. The error was: ${err}`);
-      debugger;
     }
   );
 };
@@ -276,14 +288,13 @@ internals.scheduleEmailBatch = async () => {
 
 const authenticateToMailgun = async () => {
 
-  debugger;
+
   await apiKeyPrompt({
     type: 'password',
     name: 'apiKey',
-    message: 'Please enter your mailgun apiKey.'
-    
+    message: 'Please enter your mailgun apiKey.'    
   }).then((answer) => {
-      debugger;
+
 
       internals.mailgun = require('mailgun-js')({apiKey: answer.apiKey, domain: internals.mgDomain})
     }, (err) => {
@@ -293,30 +304,11 @@ const authenticateToMailgun = async () => {
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-////////////////////////////////////////////////////////
-
 exports.flags = 'schedule-delivery';
 exports.description = 'Launch scheduled mail delivery, max of three days in advance.';
 exports.setup = (sywac) => {
-  debugger;
   sywac
-// Todo: KC: .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts)) // Currently breaks https://github.com/sywac/sywac/issues/21
+  // Todo: KC: fix: .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts)) // Currently breaks https://github.com/sywac/sywac/issues/21
   .option(
     '-l, --email-list <email-list>',
     {
@@ -344,8 +336,8 @@ exports.setup = (sywac) => {
   .option(
     '-t, --schedule-time <time-to-schedule-email-send-for>',
     {
-      //type: 'mailgunDateTimeFormat', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true // As above, this is broken.
-      type: 'string', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true
+      type: 'mailgunDateTimeFormat', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true // As above, this is broken.
+      //type: 'string', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true
     }
   )
   .option(
@@ -369,7 +361,7 @@ exports.setup = (sywac) => {
       .option(   
         '-o, --order [des|asc(default)]',
         {
-          type: 'string', desc: 'Which order would you like the items displayed in.', defaultValue: config.get('displayOrderOfListMemberScheduledSends')
+          type: 'string', desc: 'The order you would like the items displayed in.', defaultValue: config.get('displayOrderOfListMemberScheduledSends')
         }
       );
     },
@@ -422,7 +414,6 @@ exports.setup = (sywac) => {
   ;
 };
 exports.run = async (parsedArgv, context) => {
-  debugger;
   const argv = parsedArgv;
   let subject;  
 
@@ -434,7 +425,6 @@ exports.run = async (parsedArgv, context) => {
 
   if (parsedArgv.b) {
     // Get the file and validate it.
-    debugger;
     const targetEmailBodyFilePath = `${config.get('emailBodyFileDir')}${parsedArgv.b}`;
   
     try {
@@ -462,34 +452,32 @@ exports.run = async (parsedArgv, context) => {
   }
 
   if (parsedArgv.t) {
-    debugger;
     internals.emailProps['o:deliverytime'] = parsedArgv.t;
-    // Todo: KC: Remove once the mailgunDateTimeFormat.validateValue is working.
+    // Todo: KC: Remove once the mailgunDateTimeFormat.validateValue is working. This currently allows any date.
     internals.scheduledSendDateTime = parsedArgv.t;
   } else {
-    debugger;
     return context.cliMessage('You must provide a valid schedule time.');
   }
 
   if (typeof parsedArgv.tm === 'boolean') {
-    debugger;
     internals.emailProps['o:testmode'] = parsedArgv.tm;
   } else {
     return context.cliMessage('You must provide a test mode of true or false.');
   }
-  debugger;
+
   internals.mgDomain = config.get('domain');
   console.log(`Your currently configured mailgun domain is "${internals.mgDomain}".`);
   console.log(`Your currently configured mailgun list is "${internals.mailList}".`);
 
   await authenticateToMailgun();
-  debugger;
+
 
 
 
 
   await establishSubscribedListMembersForSelection();
 
+  // Todo: KC: Extract to method.
   await emailCheckBoxPrompt({
     type: 'checkbox',
     name: 'targetEmailAddresses',
@@ -497,13 +485,18 @@ exports.run = async (parsedArgv, context) => {
     choices: internals.candidatesForCheckListSelection,
     pageSize: config.get('pageSizeOfCandidatesForCheckListSelection')
   }).then((answers) => {
-      debugger;
+      if (answers.targetEmailAddresses.length === 0) {
+        console.log('You failed to select any members.');
+        process.exit(9);
+      }
       internals.emailProps.to = answers.targetEmailAddresses;
     }, (err) => {
       debugger;
       console.log(err);
     }
   );
+
+  await promptForTagsToAddToBatch();
 
   await internals.scheduleEmailBatch();
 
