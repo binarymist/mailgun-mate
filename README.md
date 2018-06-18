@@ -1,3 +1,24 @@
+# mailgun-mate
+
+Email batch scheduling CLI.
+
+
+![license](https://img.shields.io/github/license/mashape/apistatus.svg)
+
+
+## Install
+
+```
+npm i mailgun-mate -g
+```
+Or:
+
+```
+git clone git@github.com:binarymist/mailgun-mate.git && cd mailgun-mate && npm install
+```
+Before running, you'll need to setup a little configuration. See the [Configuration](#configuration) section below.
+
+
 ## Quick Start
 
 First, you need to have a free mailgun account, a domain setup there, and at least one mail list to start controlling.
@@ -39,6 +60,44 @@ I usually use a first name (`fname` in my case), then build up your email teampl
 The `mailgunMateScheduledSends` is what mailgun-mate adds for you. Each time you schedule an email, a new array containing the `email-body-file` and the `schedule-time` will be added to the `mailgunMateScheduledSends` array. Mailgun-mate knows where to find the`email-body-file` due to the `emailBodyFileDir` that you need to set in the configuration file.
 
 
-### Running mailgun-mate
+## Usage
 
+### Command Line
+
+```
+Usage: mailgun-mate [command(s)] [option(s)]
+
+Options:
+  -a, --about               Show about screen.
+  -v, --version             Show version number.
+  -h, --help                Show help.
+
+Commands:
+  schedule-delivery         Launch scheduled mail delivery, max of three days in advance.
+
+Options:
+  -l, --email-list      <email-list>                     The mailgun email list you would like to use.
+  -b, --email-body-file <email-body-file>                File containing the html for the body of the email. Relative to the emailBodyFileDir directory you set in the configuration.
+  -f, --from <sent-from-for-replies>                     The value that the receiver will see that your emails appear to be sent from, in the form of "Kim <services@binarymist.net>"
+  -s, --subject <subject-for-email>'                     The subject for the email
+  -t, --schedule-time <time-to-schedule-email-send-for>  The time that all emails will be sent (in RFC 2822 time).
+  -tm, --test-mode                                       Whether or not to send in test mode "o:testmode". defaultValue set in config file.
+
+Options:
+  -h, --help                     Show help.
+
+Commands:
+  schedule-delivery list         List members in order based on latest or oldest mailgunMateScheduledSends datetimes.
+
+Options:
+  -h, --help                                    Show help.
+  -l, --email-list          <email-list>        The mailgun email list you would like to use. A required string argument, if none is present on command line, value from config file is used.
+  -o, --order              [des|asc(default)]   The order you would like the items displayed in.
+```
+
+## License
+
+Copyright [Kim Carter](https://github.com/mcollina) and other contributors, Licensed under [MIT](./LICENSE).
+
+[mailgun-js]: https://github.com/bojand/mailgun-js
 
