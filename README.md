@@ -97,7 +97,7 @@ Options:
 
 ## License
 
-Copyright [Kim Carter](https://github.com/mcollina) and other contributors, Licensed under [MIT](./LICENSE).
+Copyright [Kim Carter](https://github.com/binarymist) and other contributors, Licensed under [MIT](./LICENSE).
 
 [mailgun-js]: https://github.com/bojand/mailgun-js
 
