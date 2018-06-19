@@ -97,7 +97,7 @@ Options:
 
 ## Contribution
 
-Please open an [issue](../issues) to discus the proposed change before submitting a [pull request](../pulls).
+Please open an [issue](https://github.com/binarymist/mailgun-mate/issues) to discus the proposed change before submitting a [pull request](https://github.com/binarymist/mailgun-mate/pulls).
 
 ## License
 
