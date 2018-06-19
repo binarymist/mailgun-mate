@@ -95,6 +95,10 @@ Options:
   -o, --order              [des|asc(default)]   The order you would like the items displayed in.
 ```
 
+## Contribution
+
+Please open an [issue](../issues) to discus the proposed change before submitting a [pull request](../pulls).
+
 ## License
 
 Copyright [Kim Carter](https://github.com/binarymist) and other contributors, Licensed under [MIT](./LICENSE).
