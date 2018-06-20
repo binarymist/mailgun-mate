@@ -235,6 +235,8 @@ const authenticateToMailgun = async () => {
   const keyPath = `${os.homedir()}/.mailgun/key`;
   const provideAuthenticatedMailgun = (apiKey) => { internals.mailgun = createMailgun({ apiKey, domain: internals.mgDomain }); };
 
+  // Todo: KC: Validate that file permissiions and ownership are as restrictive as SSH private key files.
+  // https://github.com/binarymist/mailgun-mate/issues/4
   const getKeyFromHomeDir = async () => {
     try {
       return (await readFileAsync(keyPath, { encoding: 'utf8' })).trim();
