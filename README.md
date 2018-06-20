@@ -95,6 +95,26 @@ Options:
   -o, --order              [des|asc(default)]   The order you would like the items displayed in.
 ```
 
+### Debugging
+
+From within your `mailgun-mate` source directory, run the following and open your chrome dev tools:
+
+```
+node --inspect-brk ./bin/mailgun-mate [command(s)] [option(s)]
+```
+
+Or
+
+```
+npm run debug
+```
+
+If you need to pass arguments:
+
+```
+npm run debug -- [command(s)] [option(s)]
+```
+
 ## Contribution
 
 Please open an [issue](https://github.com/binarymist/mailgun-mate/issues) to discus the proposed change before submitting a [pull request](https://github.com/binarymist/mailgun-mate/pulls).
