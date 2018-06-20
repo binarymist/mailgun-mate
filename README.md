@@ -42,7 +42,7 @@ Clicking on that will unsubscribe the list member from the entire domain, which 
 
 Before sending any batch, I like to make sure I have `o:testmode` set to `true`, and I'm targeting a test `emailList`. Both of these can be set in the config file(s), but are also overrideable at the command line.  
 you can change these once you're confident your configuration, command line args, email teamplate, and recipient variables are correct.  
-I usually use a first name (`fname` in my case), then build up your email teamplate using a `%recipient.fname%` wich mailgun will substitute for the `fname` property you set in the list members recipient variables. The following is an example.
+I usually use a first name (`fname` in my case), then build up your email teamplate using a `%recipient.fname%` wich mailgun will substitute for the `fname` property you set in the list members recipient variables. The following is an example of how I setup the mailgun recipient variables.
 
 ```
 {
@@ -50,14 +50,22 @@ I usually use a first name (`fname` in my case), then build up your email teampl
   "mailgunMateScheduledSends": [
     [
       "a.html",
-      "2018-06-14_13:01:44"
+      "2018-06-16_17:00:00"
+    ],
+    [
+      "b.html",
+      "2018-06-16_17:10:00"
     ]
   ],
-  "name": "Bob Builder"
+  "name": "Bob Builder",
+  "org": "Bob Builder Holdings",
+  "role": "Carpenter"
 }
 ```
 
 The `mailgunMateScheduledSends` is what mailgun-mate adds for you. Each time you schedule an email, a new array containing the `email-body-file` and the `schedule-time` will be added to the `mailgunMateScheduledSends` array. Mailgun-mate knows where to find the`email-body-file` due to the `emailBodyFileDir` that you need to set in the configuration file.
+
+The `name` property is printed beside the email address in `mailgun-mate`. `org` and `role` will be used to sort in the future.
 
 
 ## Usage
