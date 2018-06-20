@@ -1,4 +1,5 @@
 const config = require('config/config');
+const log = require('purpleteam-logger').logger();
 const moment = require('moment');
 const Type = require('sywac/types/type');
 const readFileAsync = require('util').promisify(require('fs').readFile);
@@ -55,16 +56,16 @@ const displayListInfo = async () => {
         access_level, address, created_at, description, members_count, name
       }
     } = data;
-    console.log('Authentication successful!');
-    console.log('Details for the list you selected follows:');
-    console.log(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (subscribed and unsubscribed inclusive) \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
+    log.notice('Authentication successful!');
+    log.notice('Details for the list you selected follows:');
+    log.notice(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (subscribed and unsubscribed inclusive) \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
   }, (err) => {
     if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
-      console.log('Authentication unsuccessful! Feel free to try again.');
-      console.log(`Retrieving mail list "${internals.mailList}" was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
+      log.crit('Authentication unsuccessful! Feel free to try again.');
+      log.error(`Retrieving mail list "${internals.mailList}" was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
       process.exit(9);
     }
-    console.log(`Error occured while attempting to retrieve the mail list info. Error was: "${err}"`);
+    log.error(`Error occured while attempting to retrieve the mail list info. Error was: "${err}"`);
   });
 };
 
@@ -84,7 +85,7 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
           nextPage = page.items.length === mailgunMaxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
           listMembers = listMembers.concat(page.items);
         }, (err) => {
-          console.log(`There was a problem getting subsequent pages from the mail list. The error was: ${err}`);
+          log.error(`There was a problem getting subsequent pages from the mail list. The error was: ${err}`);
           process.exit(9);
         });
       }
@@ -122,11 +123,11 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
       workWithListMembersOnceEstablished(orderedDisplayableSubscribedListMembers);
     }, (err) => {
       if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
-        console.log('Authentication unsuccessful! Feel free to try again.');
-        console.log(`Retrieving mail list mebers was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
+        log.crit('Authentication unsuccessful! Feel free to try again.');
+        log.error(`Retrieving mail list mebers was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
         process.exit(9);
       }
-      console.log(`Error occured while attempting to retrieve the mail list members. Error was: "${err}"`);
+      log.error(`Error occured while attempting to retrieve the mail list members. Error was: "${err}"`);
     }
   );
 };
@@ -134,7 +135,7 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
 
 const displaySubscribedListMembers = async () => {
   await establishSubscribedListMembersAndSort((orderedDisplayableSubscribedListMembers) => {
-    console.log(`\n${'Ordered Subscribed Members'.padEnd(config.get('valueToSiblingFieldPadWidth'))}DateTime Scheduled` + '\n' + 
+    log.notice(`\n${'Ordered Subscribed Members'.padEnd(config.get('valueToSiblingFieldPadWidth'))}DateTime Scheduled` + '\n' + 
     orderedDisplayableSubscribedListMembers.reduce(
       (accumulated, member) => 
         `${accumulated}\n${`${member.address}`.padEnd(config.get('valueToSiblingFieldPadWidth'))}${member.latestScheduledSend}`
@@ -168,7 +169,7 @@ const promptForTagsToAddToBatch = async () => {
   }).then((answers) => {
     if (answers.tagsToAddToBatch) internals.emailProps['o:tag'] = answers.tagsToAddToBatch.split(',').map(tag => tag.trim());
   }, (err) => {
-    console.log(err);
+    log.notice(err);
   });
 };
 
@@ -198,9 +199,9 @@ internals.scheduleEmailBatch = async () => {
     // If was successfully received by mailgun, we need to update the recipientVars of the chosenSubscribedListMembers with the date and the name of the email body file.
 
     if (sendResolution.id && sendResolution.message === 'Queued. Thank you.') {
-      console.log(`Emails were scheduled. Response from mailgun was:\nid: "${sendResolution.id}"\nmessage: "${sendResolution.message}"`);
-      console.log('Now updating the following list Members:');
-      chosenSubscribedListMembers.forEach(listMember => console.log(`${listMember.address} `));
+      log.notice(`Emails were scheduled. Response from mailgun was:\nid: "${sendResolution.id}"\nmessage: "${sendResolution.message}"`);
+      log.notice('Now updating the following list Members:');
+      chosenSubscribedListMembers.forEach(listMember => log.notice(`${listMember.address} `));
 
       // Todo: KC: Currently internals.scheduledSendDateTime is being assigned in the run routine, as the mailgunDateTimeFormat.validateValue is broken.
       // So currently no datetime validation. If date is entered in the past, the eamil will be sent immediatly, but recorded as being sent in the past at the time that was given to mailgun-mate.
@@ -216,17 +217,17 @@ internals.scheduleEmailBatch = async () => {
 
         await internals.list.members(memberRecord.address).update(newMemberRecord)
           .then((updateResolution) => {
-            console.log(`address: ${`${updateResolution.member.address},`.padEnd(config.get('valueToSiblingFieldPadWidth'))} message: ${updateResolution.message}`);
+            log.notice(`address: ${`${updateResolution.member.address},`.padEnd(config.get('valueToSiblingFieldPadWidth'))} message: ${updateResolution.message}`);
             resolve(`Resolved promise for memberRecord ${newMemberRecord}`);
           }, (err) => {
             reject(err);
           });
       }));
 
-      await Promise.all(promiseOfUpdateListMembers).catch(reason => console.log(reason.message));
+      await Promise.all(promiseOfUpdateListMembers).catch(reason => log.error(reason.message));
     }
   }, (err) => {
-    console.log(`There was a problem scheduling the eamils. The error was: ${err}`);
+    log.error(`There was a problem scheduling the eamils. The error was: ${err}`);
   });
 };
 
@@ -241,7 +242,7 @@ const authenticateToMailgun = async () => {
     try {
       return (await readFileAsync(keyPath, { encoding: 'utf8' })).trim();
     } catch (err) {
-      console.log(`Could not find mailgun private key at "${keyPath}"`);
+      log.warning(`Could not find mailgun private key at "${keyPath}"`);
       return false;
     }
   };
@@ -255,7 +256,7 @@ const authenticateToMailgun = async () => {
     }).then((answer) => {
       caughtApiKey = answer.apiKey;
     }, (err) => {
-      console.log(err);
+      log.error(err);
     });
     return caughtApiKey;
   };
@@ -389,10 +390,10 @@ exports.run = async (parsedArgv, context) => {
     try {
       internals.emailProps.html = await readFileAsync(targetEmailBodyFilePath, { encoding: 'utf8' });
     } catch (err) {
-      console.log(`Could not read file: ${targetEmailBodyFilePath}, the error was: ${err.message}.`); // eslint-disable-line no-console
+      log.error(`Could not read file: ${targetEmailBodyFilePath}, the error was: ${err.message}.`);
       process.exit(9);
     }
-    console.log(`${config.get('appName')} has your file ${targetEmailBodyFilePath}`); // eslint-disable-line no-console
+    log.notice(`${config.get('appName')} has your file ${targetEmailBodyFilePath}`);
     internals.emailBodyFile = parsedArgv.b;
   } else {
     return context.cliMessage('You must provide a valid html file that exists relative to the emailBodyFileDir directory you set in the configuration to be used as the email body.');
@@ -425,8 +426,8 @@ exports.run = async (parsedArgv, context) => {
   }
 
   internals.mgDomain = config.get('domain');
-  console.log(`Your currently configured mailgun domain is "${internals.mgDomain}".`);
-  console.log(`Your currently configured mailgun list is "${internals.mailList}".`);
+  log.notice(`Your currently configured mailgun domain is "${internals.mgDomain}".`);
+  log.notice(`Your currently configured mailgun list is "${internals.mailList}".`);
 
   await authenticateToMailgun();
 
@@ -441,12 +442,12 @@ exports.run = async (parsedArgv, context) => {
     pageSize: config.get('pageSizeOfCandidatesForCheckListSelection')
   }).then((answers) => {
     if (answers.targetEmailAddresses.length === 0) {
-      console.log('You failed to select any members.');
+      log.warning('You failed to select any members.');
       process.exit(9);
     }
     internals.emailProps.to = answers.targetEmailAddresses;
   }, (err) => {
-    console.log(err);
+    log.error(err);
   });
 
   await promptForTagsToAddToBatch();
