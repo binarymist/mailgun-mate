@@ -4,6 +4,7 @@ const Type = require('sywac/types/type');
 const readFileAsync = require('util').promisify(require('fs').readFile);
 const inquirer = require('inquirer');
 const createMailgun = require('mailgun-js');
+const os = require('os');
 
 const emailCheckBoxPrompt = inquirer.createPromptModule();
 const tagInputPrompt = inquirer.createPromptModule();
@@ -231,15 +232,33 @@ internals.scheduleEmailBatch = async () => {
 
 
 const authenticateToMailgun = async () => {
-  await apiKeyPrompt({
-    type: 'password',
-    name: 'apiKey',
-    message: 'Please enter your mailgun apiKey.'
-  }).then((answer) => {
-    internals.mailgun = createMailgun({ apiKey: answer.apiKey, domain: internals.mgDomain });
-  }, (err) => {
-    console.log(err);
-  });
+  const keyPath = `${os.homedir()}/.mailgun/key`;
+  const provideAuthenticatedMailgun = (apiKey) => { internals.mailgun = createMailgun({ apiKey, domain: internals.mgDomain }); };
+
+  const getKeyFromHomeDir = async () => {
+    try {
+      return (await readFileAsync(keyPath, { encoding: 'utf8' })).trim();
+    } catch (err) {
+      console.log(`Could not find mailgun private key at "${keyPath}"`);
+      return false;
+    }
+  };
+
+  const promptUserForKey = async () => {
+    let caughtApiKey;
+    await apiKeyPrompt({
+      type: 'password',
+      name: 'apiKey',
+      message: 'Please enter your mailgun apiKey.'
+    }).then((answer) => {
+      caughtApiKey = answer.apiKey;
+    }, (err) => {
+      console.log(err);
+    });
+    return caughtApiKey;
+  };
+
+  provideAuthenticatedMailgun(await getKeyFromHomeDir() || await promptUserForKey());
 };
 
 
