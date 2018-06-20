@@ -1,6 +1,6 @@
 # mailgun-mate
 
-Email batch scheduling CLI.
+Email batch scheduling CLI. Code is currently in proof of concept (PoC) form.
 
 
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
