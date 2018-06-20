@@ -29,7 +29,8 @@
     "inquirer": "^6.0.0",
     "mailgun-js": "^0.18.0",
     "moment": "^2.22.2",
-    "sywac": "^1.2.0"
+    "sywac": "^1.2.0",
+    "purpleteam-logger": "git+ssh://github.com/binarymist/purpleteam-logger.git"
   },
   "devDependencies": {
     "eslint": "^4.19.1",

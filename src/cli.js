@@ -1,6 +1,7 @@
 const sywac = require('sywac');
 const chalk = require('chalk');
 const figlet = require('figlet');
+const log = require('purpleteam-logger').logger();
 const pkg = require('package.json');
 
 const internals = {};
@@ -30,7 +31,7 @@ const processCommands = async (options) => {
   cliArgsSuccessfullyHandled = true;
 
   if (!cliArgs.handled) {
-    console.log('No commands were run.'); // eslint-disable-line no-console
+    log.info('No commands were run.', { tags: ['cli'] });
     cliArgsSuccessfullyHandled = false;
   }
   return cliArgsSuccessfullyHandled;
