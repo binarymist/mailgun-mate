@@ -95,6 +95,8 @@ Options:
   -o, --order              [des|asc(default)]   The order you would like the items displayed in.
 ```
 
+Before authenticating with mailgun, `mailgun-mate` checks the `${os.homedir()}/.mailgun/key` for your private key, if present, it will attempt authentication, if not present, it will prompt for your key at the terminal. Currently there is no validation on your private key file ownership or permissions, but they should be set at least as restrictive as SSH private keys.
+
 ### Debugging
 
 From within your `mailgun-mate` source directory, run the following and open your chrome dev tools:
