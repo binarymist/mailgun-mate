@@ -203,8 +203,6 @@ internals.scheduleEmailBatch = async () => {
       log.notice('Now updating the following list Members:');
       chosenSubscribedListMembers.forEach(listMember => log.notice(`${listMember.address} `));
 
-      // Todo: KC: Currently internals.scheduledSendDateTime is being assigned in the run routine, as the mailgunDateTimeFormat.validateValue is broken.
-      // So currently no datetime validation. If date is entered in the past, the eamil will be sent immediatly, but recorded as being sent in the past at the time that was given to mailgun-mate.
       const scheduledSendToAdd = [`${internals.emailBodyFile}`, moment(internals.scheduledSendDateTime).format('YYYY-MM-DD_HH:mm:ss')];
       const promiseOfUpdateListMembers = chosenSubscribedListMembers.map(memberRecord => new Promise(async (resolve, reject) => {
         const newMemberRecord = memberRecord;
@@ -266,10 +264,10 @@ const authenticateToMailgun = async () => {
 
 
 exports.flags = 'schedule-delivery';
-exports.description = 'Launch scheduled mail delivery, max of three days in advance.';
+exports.desc = 'Launch scheduled mail delivery, max of three days in advance.';
 exports.setup = (sywac) => {
   sywac
-  // Todo: KC: fix: .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts)) // Currently breaks https://github.com/sywac/sywac/issues/21
+    .registerFactory('mailgunDateTimeFormat', opts => new mailgunDateTimeFormat(opts)) // Currently breaks https://github.com/sywac/sywac/issues/21
     .option(
       '-l, --email-list <email-list>',
       {
@@ -298,7 +296,6 @@ exports.setup = (sywac) => {
       '-t, --schedule-time <time-to-schedule-email-send-for>',
       {
         type: 'mailgunDateTimeFormat', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true // As above, this is broken.
-        //type: 'string', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true
       }
     )
     .option(
@@ -307,7 +304,7 @@ exports.setup = (sywac) => {
         type: 'boolean', desc: 'Whether or not to send in test mode "o:testmode".', strict: true, defaultValue: config.get('o:testmode')
       }
     )  // Todo: KC: If the following command call exists, then the schedule-delivery command is broken. Uncomment to run list.
-/*  .command('list', {
+  .command('list', {
 
     desc: 'List members in order based on latest or oldest mailgunMateScheduledSends datetimes.',
     paramsDesc: 'The order to list the items in: "des" for descending, "asc" for ascending.',
@@ -352,7 +349,7 @@ exports.setup = (sywac) => {
     }
 
 
-  })*/
+  })
   // Todo: KC: Following command should provide context sensitive help for the list command, but it doesn't work
   /*.command('*', {
     desc: 'Default command for schedule-delivery.',
@@ -371,8 +368,7 @@ exports.setup = (sywac) => {
       return argv;
       //argv.handled = true;
     }
-  })*/
-  ;
+  });*/
 };
 exports.run = async (parsedArgv, context) => {
   const argv = parsedArgv;
@@ -413,8 +409,6 @@ exports.run = async (parsedArgv, context) => {
 
   if (parsedArgv.t) {
     internals.emailProps['o:deliverytime'] = parsedArgv.t;
-    // Todo: KC: Remove once the mailgunDateTimeFormat.validateValue is working. This currently allows any date.
-    internals.scheduledSendDateTime = parsedArgv.t;
   } else {
     return context.cliMessage('You must provide a valid schedule time.');
   }
@@ -453,12 +447,6 @@ exports.run = async (parsedArgv, context) => {
   await promptForTagsToAddToBatch();
 
   await internals.scheduleEmailBatch();
-
-  // Todo: KC: deserialise configFileContents
-  //    https://github.com/danivek/json-api-serializer looks to be well maintained.
-  //    https://github.com/SeyZ/jsonapi-serializer     looks to be a little neglected.
-
-  // Todo: KC: Validate object graph using Joi. Look at using the same validation in the Orchestrator as well.
 
   argv.handled = true;
 };
