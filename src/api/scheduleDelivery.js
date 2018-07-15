@@ -11,10 +11,10 @@ const tagInputPrompt = inquirer.createPromptModule();
 const internals = { emailProps: {} };
 
 class MailgunDateTimeFormat extends Type {
-  get datatype() {
+  get datatype() { // eslint-disable-line class-methods-use-this
     return 'MailgunDateTimeFormat';
   }
-  validateValue(value) {
+  validateValue(value) { // eslint-disable-line class-methods-use-this
     // https://momentjs.com/docs/#/parsing/string-format/
     const scheduledTime = moment(value, config.get('mailgunTimeFormat'));
     internals.scheduleDateIsValid = scheduledTime.isValid();
@@ -29,19 +29,23 @@ class MailgunDateTimeFormat extends Type {
   }
   buildInvalidMessage(context, msgAndArgs) {
     let customMessage;
+    const localMsgAndArgs = msgAndArgs;
     super.buildInvalidMessage(context, msgAndArgs);
 
     if (!internals.scheduleDateIsValid) customMessage = `The datetime you entered was not valid according to mailgun's rules. RFC 2822, formatted as mailgun requires "${config.get('mailgunTimeFormat')}", See (https://documentation.mailgun.com/en/latest/user_manual.html#scheduling-delivery) for more information.`;
     else if (!internals.scheduleDateIsBeforeDeadline) customMessage = `The datetime you entered was outside of the mailgun ${config.get('mailgunMaxFutureScheduleInDays')} days schedule linmmit.`;
     else if (!internals.scheduleDateIsAfterNow) customMessage = 'The datetime you entered was in the past.';
-    msgAndArgs.msg += ` Please specify a valid schedule datetime. ${customMessage} Please try again.`;
+    localMsgAndArgs.msg += ` Please specify a valid schedule datetime. ${customMessage} Please try again.`;
   }
 }
 
 
 const establishSubscribedListMembersForSelection = async () => {
-  await commonApi.establishSubscribedListMembersAndSort( (orderedDisplayableSubscribedListMembers) => {
-    internals.candidatesForCheckListSelection = orderedDisplayableSubscribedListMembers.map(member => ({ name: `${member.name.padEnd(config.get('valueToSiblingFieldPadWidth'))} ${member.address.padEnd(config.get('valueToSiblingFieldPadWidth'))}${member.latestScheduledSend}`, value: member.address }));
+  await commonApi.establishSubscribedListMembersAndSort((orderedDisplayableSubscribedListMembers) => {
+    internals.candidatesForCheckListSelection = orderedDisplayableSubscribedListMembers.map(member => ({
+      name: `${member.name.padEnd(config.get('valueToSiblingFieldPadWidth'))} ${member.address.padEnd(config.get('valueToSiblingFieldPadWidth'))}${member.latestScheduledSend}`,
+      value: member.address
+    }));
   });
 };
 
@@ -54,12 +58,8 @@ const promptForTagsToAddToBatch = async () => {
   await tagInputPrompt({
     type: 'input',
     name: 'tagsToAddToBatch',
-    message: 'Would you like to add any tags? You can add up to three, seperated by commas.',
-    validate: (userInput, answersHash) => {
-      // Todo: KC: provide validation.
-      // Tags are case insensitive and should be ascii only. Maximum tag length is 128 characters.
-      return true;
-    }
+    message: 'Would you like to add any tags? You can add up to three case insensitive, seperated by commas.',
+    validate: userInput => ((userInput.length <= 128 && RegExp(/^[\x20-\x7F]*$/).test(userInput)) ? true : 'Tags can be comprised of ascii only, up to 128 characters in length.')
   }).then((answers) => {
     if (answers.tagsToAddToBatch) internals.emailProps['o:tag'] = answers.tagsToAddToBatch.split(',').map(tag => tag.trim());
   }, (err) => {
@@ -74,8 +74,7 @@ const addChosenMembersToBatch = () => {
   const recipientVars = {};
 
   const chosenSubscribedListMembers = commonApi.subscribedListMembers().filter(subscribedListMember =>
-    internals.emailProps.to.some(toAddress => toAddress === subscribedListMember.address)
-  );
+    internals.emailProps.to.some(toAddress => toAddress === subscribedListMember.address));
 
   chosenSubscribedListMembers.forEach((member) => {
     recipientVars[member.address] = member.vars;
@@ -85,7 +84,7 @@ const addChosenMembersToBatch = () => {
 };
 
 
-scheduleEmailBatch = async () => {
+const scheduleEmailBatch = async () => {
   const chosenSubscribedListMembers = addChosenMembersToBatch();
 
   await commonApi.mailgun().messages().send(internals.emailProps).then(async (sendResolution) => {
@@ -143,16 +142,16 @@ const runEmailCheckBoxPrompt = async () => {
 };
 
 
-module.exports = {  
+module.exports = {
   establishSubscribedListMembersForSelection,
   MailgunDateTimeFormat,
   runEmailCheckBoxPrompt,
   promptForTagsToAddToBatch,
   scheduleEmailBatch,
-  setHtmlEmailBody: (htmlEmailBody) => {internals.emailProps.html = htmlEmailBody;},
-  setEmailBodyFile: (emailBodyFile) => {internals.emailBodyFile = emailBodyFile;},
-  setEmailPropsFromAddress: (fromAddress) => {internals.emailProps.from = fromAddress;},
-  setEmailSubject: (subject) => {internals.emailProps.subject = subject;},
-  setDeliveryTime: (time) => {internals.emailProps['o:deliverytime'] = time;},
-  setTestMode: (isTestMode) => {internals.emailProps['o:testmode'] = isTestMode;}
+  setHtmlEmailBody: (htmlEmailBody) => { internals.emailProps.html = htmlEmailBody; },
+  setEmailBodyFile: (emailBodyFile) => { internals.emailBodyFile = emailBodyFile; },
+  setEmailPropsFromAddress: (fromAddress) => { internals.emailProps.from = fromAddress; },
+  setEmailSubject: (subject) => { internals.emailProps.subject = subject; },
+  setDeliveryTime: (time) => { internals.emailProps['o:deliverytime'] = time; },
+  setTestMode: (isTestMode) => { internals.emailProps['o:testmode'] = isTestMode; }
 };
