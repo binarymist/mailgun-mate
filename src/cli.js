@@ -1,16 +1,15 @@
 const sywac = require('sywac');
 const chalk = require('chalk');
 const figlet = require('figlet');
-const log = require('purpleteam-logger').logger();
 const pkg = require('package.json');
+const log = require('purpleteam-logger').logger();
+const config = require('config/config');
+const { scheduleDelivery: scheduleDeliveryApi } = require('src/api');
 
-const internals = {};
 
 const processCommands = async (options) => {
-  let cliArgsSuccessfullyHandled;
-  internals.argv = options.argv;
-
   const cliArgs = await sywac
+    .registerFactory('MailgunDateTimeFormat', opts => new scheduleDeliveryApi.MailgunDateTimeFormat(opts))
     .usage('Usage: $0 [command] [option(s)]')
     .commandDirectory('cmds')
     // This overrides the --help and --version and adds their aliases
@@ -26,15 +25,7 @@ const processCommands = async (options) => {
       group: str => chalk.hex('#9961ed').bold(str),
       messages: str => chalk.keyword('orange').bold(str)
     })
-    .parseAndExit();
-
-  cliArgsSuccessfullyHandled = true;
-
-  if (!cliArgs.handled) {
-    log.info('No commands were run.', { tags: ['cli'] });
-    cliArgsSuccessfullyHandled = false;
-  }
-  return cliArgsSuccessfullyHandled;
+    .parseAndExit();  
 };
 
 module.exports = {

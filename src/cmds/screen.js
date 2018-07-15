@@ -7,7 +7,7 @@ exports.setup = {};
 exports.run = (parsedArgv, context) => {
   const argv = parsedArgv;
   argv.handled = true;
-
+  debugger;
   if (parsedArgv.about) {
     const {
       name: projectName, version, description, homepage, author: { name, email }
