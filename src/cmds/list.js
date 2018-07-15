@@ -4,9 +4,13 @@ debugger;
 const { list: listApi, common: commonApi } = require('src/api');
 debugger;
 
-exports.flags = 'list';
+exports.flags = `list [order=${config.get('displayOrderOfListMemberScheduledSends')}]`;
 exports.desc = 'List members in order based on latest or oldest mailgunMateScheduledSends datetimes.';
-exports.paramsDesc = 'The order to list the items in: "des" for descending, "asc" for ascending.',
+exports.paramsDesc = 'The order to list the items in: "des" for descending, "asc" for ascending.';
+exports.params = [{
+  type: 'enum',
+  choices: ['des', 'asc']
+}];
 exports.setup = (sywac) => {
   debugger;
   sywac  
@@ -15,17 +19,11 @@ exports.setup = (sywac) => {
     {
       type: 'string', desc: 'The mailgun email list you would like to use.', defaultValue: config.get('emailList')
     }
-  )
-  .option(
-    '-o, --order [des|asc(default)]',
-    {
-      type: 'string', desc: 'The order you would like the items displayed in.', defaultValue: config.get('displayOrderOfListMemberScheduledSends')
-    }
   );
 };  
 exports.run = async (parsedArgv, context) => {      
   debugger;
-  commonApi.setListMemberDispalyOrder(parsedArgv.o);      
+  commonApi.setListMemberDispalyOrder(parsedArgv.order);      
   commonApi.setMailList(parsedArgv.l);   
 
   await commonApi.authenticateToMailgun();

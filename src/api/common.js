@@ -26,7 +26,7 @@ const displayListInfo = async () => {
     } = data;
     log.notice('Authentication successful!');
     log.notice('Details for the list you selected follows:');
-    log.notice(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (subscribed and unsubscribed inclusive) \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
+    log.notice(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (subscribed and unsubscribed inclusive). Only the subscribed are listed below. \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
   }, (err) => {
     if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
       log.crit('Authentication unsuccessful! Feel free to try again.');
