@@ -2,13 +2,11 @@ const sywac = require('sywac');
 const chalk = require('chalk');
 const figlet = require('figlet');
 const pkg = require('package.json');
-const log = require('purpleteam-logger').logger();
-const config = require('config/config');
+const log = require('purpleteam-logger').logger(); // eslint-disable-line no-unused-vars
 const { scheduleDelivery: scheduleDeliveryApi } = require('src/api');
 
-
-const processCommands = async (options) => {
-  const cliArgs = await sywac
+const processCommands = async (options) => { // eslint-disable-line no-unused-vars
+  const cliArgs = await sywac // eslint-disable-line no-unused-vars
     .registerFactory('MailgunDateTimeFormat', opts => new scheduleDeliveryApi.MailgunDateTimeFormat(opts))
     .usage('Usage: $0 [command] [option(s)]')
     .commandDirectory('cmds')
@@ -25,7 +23,7 @@ const processCommands = async (options) => {
       group: str => chalk.hex('#9961ed').bold(str),
       messages: str => chalk.keyword('orange').bold(str)
     })
-    .parseAndExit();  
+    .parseAndExit();
 };
 
 module.exports = {

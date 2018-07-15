@@ -17,7 +17,7 @@ exports.setup = (sywac) => {
       }
     );
 };
-exports.run = async (parsedArgv, context) => {
+exports.run = async (parsedArgv, context) => { // eslint-disable-line no-unused-vars
   commonApi.setListMemberDispalyOrder(parsedArgv.order);
   commonApi.setMailList(parsedArgv.l);
   await commonApi.authenticateToMailgun();

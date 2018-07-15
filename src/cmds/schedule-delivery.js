@@ -44,7 +44,7 @@ exports.setup = (sywac) => {
       }
     );
 };
-exports.run = async (parsedArgv, context) => {
+exports.run = async (parsedArgv, context) => { // eslint-disable-line no-unused-vars
   commonApi.setMailList(parsedArgv.l);
   const targetEmailBodyFilePath = `${config.get('emailBodyFileDir')}${parsedArgv.b}`;
   const htmlEmailBody = await commonApi.readFile(targetEmailBodyFilePath);
