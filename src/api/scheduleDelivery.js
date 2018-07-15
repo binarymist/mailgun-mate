@@ -14,9 +14,6 @@ class MailgunDateTimeFormat extends Type {
   get datatype() {
     return 'MailgunDateTimeFormat';
   }
-  setValue(context, value) {
-    context.assignValue(this.id, value);
-  }
   validateValue(value) {
     // https://momentjs.com/docs/#/parsing/string-format/
     const scheduledTime = moment(value, config.get('mailgunTimeFormat'));
