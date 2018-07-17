@@ -2,9 +2,7 @@
 
 Email batch scheduling CLI. Code is currently in proof of concept (PoC) form.
 
-
-![license](https://img.shields.io/github/license/mashape/apistatus.svg)
-
+[![Build Status](https://api.travis-ci.org/binarymist/mailgun-mate.png)](https://travis-ci.org/binarymist/mailgun-mate) &nbsp; [![license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/binarymist/maailgun-mate)
 
 ## Install
 
