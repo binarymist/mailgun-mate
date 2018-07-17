@@ -30,7 +30,7 @@
     "inquirer": "^6.0.0",
     "mailgun-js": "^0.18.0",
     "moment": "^2.22.2",
-    "purpleteam-logger": "git+https://github.com/binarymist/purpleteam-logger.git",
+    "purpleteam-logger": "git+https://git@github.com/binarymist/purpleteam-logger.git",
     "sywac": "^1.2.1"
   },
   "devDependencies": {
