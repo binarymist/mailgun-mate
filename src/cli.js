@@ -2,14 +2,12 @@ const sywac = require('sywac');
 const chalk = require('chalk');
 const figlet = require('figlet');
 const pkg = require('package.json');
+const log = require('purpleteam-logger').logger(); // eslint-disable-line no-unused-vars
+const { scheduleDelivery: scheduleDeliveryApi } = require('src/api');
 
-const internals = {};
-
-const processCommands = async (options) => {
-  let cliArgsSuccessfullyHandled;
-  internals.argv = options.argv;
-
-  const cliArgs = await sywac
+const processCommands = async (options) => { // eslint-disable-line no-unused-vars
+  const cliArgs = await sywac // eslint-disable-line no-unused-vars
+    .registerFactory('MailgunDateTimeFormat', opts => new scheduleDeliveryApi.MailgunDateTimeFormat(opts))
     .usage('Usage: $0 [command] [option(s)]')
     .commandDirectory('cmds')
     // This overrides the --help and --version and adds their aliases
@@ -26,14 +24,6 @@ const processCommands = async (options) => {
       messages: str => chalk.keyword('orange').bold(str)
     })
     .parseAndExit();
-
-  cliArgsSuccessfullyHandled = true;
-
-  if (!cliArgs.handled) {
-    console.log('No commands were run.'); // eslint-disable-line no-console
-    cliArgsSuccessfullyHandled = false;
-  }
-  return cliArgsSuccessfullyHandled;
 };
 
 module.exports = {

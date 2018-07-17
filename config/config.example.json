@@ -1,6 +1,7 @@
 {
   "logger": {
-    "level": "debug"  
+    "level": "debug",
+    "transports": ["Console"]
   },
   "emailList": "test@mailgun.you.com",
   "o:testmode": true,

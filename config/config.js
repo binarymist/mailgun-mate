@@ -14,6 +14,11 @@ const schema = {
       doc: 'Write all log events with this level and below. Syslog levels used: https://github.com/winstonjs/winston#logging-levels',
       format: ['emerg', 'alert', 'crit', 'error', 'warning', 'notice', 'info', 'debug'],
       default: 'notice'
+    },
+    transports: {
+      doc: 'Transports to send logging events to.',
+      format: Array,
+      default: ['SignaleTransport']
     }
   },
   appName: {
@@ -71,6 +76,5 @@ const schema = {
 const config = convict(schema);
 config.loadFile(path.join(__dirname, `config.${process.env.NODE_ENV}.json`));
 config.validate();
-// console.log('(*) Local config file loaded'); // eslint-disable-line no-console
 
 module.exports = config;

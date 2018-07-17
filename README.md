@@ -42,7 +42,7 @@ Clicking on that will unsubscribe the list member from the entire domain, which 
 
 Before sending any batch, I like to make sure I have `o:testmode` set to `true`, and I'm targeting a test `emailList`. Both of these can be set in the config file(s), but are also overrideable at the command line.  
 you can change these once you're confident your configuration, command line args, email teamplate, and recipient variables are correct.  
-I usually use a first name (`fname` in my case), then build up your email teamplate using a `%recipient.fname%` wich mailgun will substitute for the `fname` property you set in the list members recipient variables. The following is an example.
+I usually use a first name (`fname` in my case), then build up your email teamplate using a `%recipient.fname%` wich mailgun will substitute for the `fname` property you set in the list members recipient variables. The following is an example of how I setup the mailgun recipient variables.
 
 ```
 {
@@ -50,14 +50,22 @@ I usually use a first name (`fname` in my case), then build up your email teampl
   "mailgunMateScheduledSends": [
     [
       "a.html",
-      "2018-06-14_13:01:44"
+      "2018-06-16_17:00:00"
+    ],
+    [
+      "b.html",
+      "2018-06-16_17:10:00"
     ]
   ],
-  "name": "Bob Builder"
+  "name": "Bob Builder",
+  "org": "Bob Builder Holdings",
+  "role": "Carpenter"
 }
 ```
 
 The `mailgunMateScheduledSends` is what mailgun-mate adds for you. Each time you schedule an email, a new array containing the `email-body-file` and the `schedule-time` will be added to the `mailgunMateScheduledSends` array. Mailgun-mate knows where to find the`email-body-file` due to the `emailBodyFileDir` that you need to set in the configuration file.
+
+The `name` property is printed beside the email address in `mailgun-mate`. `org` and `role` will be used to sort in the future.
 
 
 ## Usage
@@ -93,6 +101,28 @@ Options:
   -h, --help                                    Show help.
   -l, --email-list          <email-list>        The mailgun email list you would like to use. A required string argument, if none is present on command line, value from config file is used.
   -o, --order              [des|asc(default)]   The order you would like the items displayed in.
+```
+
+Before authenticating with mailgun, `mailgun-mate` checks the `${os.homedir()}/.mailgun/key` for your private key, if present, it will attempt authentication, if not present, it will prompt for your key at the terminal. Currently there is no validation on your private key file ownership or permissions, but they should be set at least as restrictive as SSH private keys.
+
+### Debugging
+
+From within your `mailgun-mate` source directory, run the following and open your chrome dev tools:
+
+```
+node --inspect-brk ./bin/mailgun-mate [command(s)] [option(s)]
+```
+
+Or
+
+```
+npm run debug
+```
+
+If you need to pass arguments:
+
+```
+npm run debug -- [command(s)] [option(s)]
 ```
 
 ## Contribution
