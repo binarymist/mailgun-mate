@@ -1,24 +1,24 @@
-'use strict';
-
 require('app-module-path').addPath(process.cwd());
-const { describe, it } = exports.lab = require('lab').script();
+exports.lab = require('lab').script();
+
+const { describe, it } = exports.lab;
+
 const { expect } = require('code');
 const sinon = require('sinon');
 const rewire = require('rewire');
 
 const config = require('config/config');
-const log = require('purpleteam-logger').init(config.get('logger'));
-const { scheduleDelivery: scheduleDeliveryApi, common: commonApi } = require('src/api');
 
+// log is used in the SUT.
+// eslint-disable-next-line no-unused-vars
+const log = require('purpleteam-logger').init(config.get('logger'));
+const { common: commonApi } = require('src/api');
 
 // 'shot' for mocking http requests
 
 describe('scheduleDelivery', async () => {
-
   describe('addChosenMembersToBatch', async () => {
-
     it('- given list of subscribed members - should establish recipient vars and return chosen subscribed members - based on user selected to addresses', async (flags) => {
-    debugger;
       const listMembersAsJson = await commonApi.readFile(`${process.cwd()}/test/api/dummyMailList`);
       const listMembers = JSON.parse(listMembersAsJson);
       const subscribedListMembers = listMembers.filter(item => item.subscribed);
@@ -27,9 +27,8 @@ describe('scheduleDelivery', async () => {
 
       subscribedListMembersStub.returns(subscribedListMembers);
 
-
       const rewiredScheduleDeliveryApi = rewire('src/api/scheduleDelivery');
-      const revertSubscribedListMembers =  rewiredScheduleDeliveryApi.__set__('commonApi', {subscribedListMembers: subscribedListMembersStub});
+      const revertSubscribedListMembers = rewiredScheduleDeliveryApi.__set__('commonApi', { subscribedListMembers: subscribedListMembersStub });
 
       const internalsEmailPropsTo = [
         '11993.lafitskaya2l@mail.ru',
@@ -40,7 +39,7 @@ describe('scheduleDelivery', async () => {
         'xroum2jam@gmail.com'
       ];
 
-      const revertEmailProps = rewiredScheduleDeliveryApi.__set__('internals', {emailProps: {to: internalsEmailPropsTo}});
+      const revertEmailProps = rewiredScheduleDeliveryApi.__set__('internals', { emailProps: { to: internalsEmailPropsTo } });
 
       const rewiredAddChosenMembersToBatch = rewiredScheduleDeliveryApi.__get__('addChosenMembersToBatch');
 
@@ -48,7 +47,7 @@ describe('scheduleDelivery', async () => {
 
       const expectedChosenSubscribedListMembers = [
         {
-          address: '11993.lafitskaya2l@mail.ru', 
+          address: '11993.lafitskaya2l@mail.ru',
           name: 'Francesca Chery',
           subscribed: true,
           vars: {
@@ -83,9 +82,9 @@ describe('scheduleDelivery', async () => {
           }
         },
         {
-          address: 'b2enet@starlifterdigital.com',    
+          address: 'b2enet@starlifterdigital.com',
           name: 'Paris Ogawa',
-          subscribed: true,    
+          subscribed: true,
           vars: {
             notes: 'Cats PJamas',
             fname: 'Ogawa',
@@ -93,12 +92,12 @@ describe('scheduleDelivery', async () => {
           }
         },
         // Not subscribed:
-        //{
-        //  "address": "c1ryptohelp8@mail.ru",
-        //  "name": "Laurinda Negus",
-        //  "subscribed": false,
-        //  "vars": {}
-        //},
+        // {
+        //   "address": "c1ryptohelp8@mail.ru",
+        //   "name": "Laurinda Negus",
+        //   "subscribed": false,
+        //   "vars": {}
+        // },
         {
           address: 'xroum2jam@gmail.com',
           name: 'Johnette Humber',
@@ -118,7 +117,7 @@ describe('scheduleDelivery', async () => {
           }
         }
       ];
-  
+
       expect(chosenSubscribedListMembers).to.equal(expectedChosenSubscribedListMembers);
 
       sinon.assert.calledOnce(subscribedListMembersStub);
@@ -164,17 +163,16 @@ describe('scheduleDelivery', async () => {
         }
       };
 
-      const actualRecipientVars =  rewiredScheduleDeliveryApi.__get__('internals.emailProps[\'recipient-variables\']');
+      const actualRecipientVars = rewiredScheduleDeliveryApi.__get__('internals.emailProps[\'recipient-variables\']');
 
       expect(actualRecipientVars).to.equal(expectedRecipientVars);
 
+      // As per lab docs.
+      // eslint-disable-next-line no-param-reassign
       flags.onCleanup = () => {
-        debugger;
         revertSubscribedListMembers();
         revertEmailProps();
       };
     });
-
   });
-
 });
