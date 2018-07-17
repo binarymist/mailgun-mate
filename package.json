@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "deps": "npm-check",
     "update:deps": "npm-check -u",
+    "pretest": "npm run lint",
     "debug": "node --inspect-brk ./bin/mailgun-mate",
     "start": "node ./bin/mailgun-mate"
   },

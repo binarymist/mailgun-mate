@@ -54,7 +54,6 @@ const promptForTagsToAddToBatch = async () => {
   // Can add from 0 to 3 tags:
   //   https://documentation.mailgun.com/en/latest/user_manual.html#tagging
   //   https://documentation.mailgun.com/en/latest/user_manual.html#batch-sending
-
   await tagInputPrompt({
     type: 'input',
     name: 'tagsToAddToBatch',
@@ -72,7 +71,6 @@ const promptForTagsToAddToBatch = async () => {
 // Batching via the mailgun-js abstraction: https://github.com/bojand/mailgun-js/blob/master/docs/batch.md
 const addChosenMembersToBatch = () => {
   const recipientVars = {};
-
   const chosenSubscribedListMembers = commonApi.subscribedListMembers().filter(subscribedListMember =>
     internals.emailProps.to.some(toAddress => toAddress === subscribedListMember.address));
 
