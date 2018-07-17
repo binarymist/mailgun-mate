@@ -47,8 +47,8 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
     listMembers = list.items;
     let nextPage = list.paging.next.split('https://api.mailgun.net/v3')[1];
 
-    while (nextPage) {
-      await internals.mailgun.get(nextPage).then((page) => {
+    while (nextPage) { // Fix the following, as per issue #9
+      await internals.mailgun.get(nextPage).then((page) => { // eslint-disable-line no-await-in-loop, no-loop-func
         nextPage = page.items.length === mailgunMaxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
         listMembers = listMembers.concat(page.items);
       }, (err) => {
