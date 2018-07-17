@@ -7,11 +7,11 @@ const log = require('purpleteam-logger').logger();
 
 const apiKeyPrompt = inquirer.createPromptModule();
 
-const internals = {  
+const internals = {
   mgDomain: config.get('domain')
 };
 
-log.notice(`Your currently configured mailgun domain is "${internals.mgDomain}".`);  
+log.notice(`Your currently configured mailgun domain is "${internals.mgDomain}".`);
 
 
 const displayListInfo = async () => {
@@ -21,12 +21,12 @@ const displayListInfo = async () => {
     // `data` is mailing list info
     const {
       list: {
-        access_level, address, created_at, description, members_count, name
+        access_level, address, created_at, description, members_count, name // eslint-disable-line camelcase
       }
     } = data;
     log.notice('Authentication successful!');
     log.notice('Details for the list you selected follows:');
-    log.notice(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (subscribed and unsubscribed inclusive). Only the subscribed are listed below. \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`);
+    log.notice(`name: "${name}"\ndescription: "${description}"\nmembers_count: ${members_count} (subscribed and unsubscribed inclusive). Only the subscribed are listed below. \naddress: "${address}"\naccess_level: "${access_level}"\ncreated_at: ${created_at}`); // eslint-disable-line camelcase
   }, (err) => {
     if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
       log.crit('Authentication unsuccessful! Feel free to try again.');
@@ -43,61 +43,59 @@ const establishSubscribedListMembersAndSort = async (workWithListMembersOnceEsta
   const mailgunMaxPageSize = 100;
   let listMembers;
 
-  await internals.list.members().pages().page({ subscribed: true, limit: mailgunMaxPageSize }).then(
-    async function (list) {
-      listMembers = list.items;
-      let nextPage = list.paging.next.split('https://api.mailgun.net/v3')[1];
+  await internals.list.members().pages().page({ subscribed: true, limit: mailgunMaxPageSize }).then(async (list) => {
+    listMembers = list.items;
+    let nextPage = list.paging.next.split('https://api.mailgun.net/v3')[1];
 
-      while (nextPage) {
-        await internals.mailgun.get(nextPage).then((page) => {
-          nextPage = page.items.length === mailgunMaxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
-          listMembers = listMembers.concat(page.items);
-        }, (err) => {
-          log.error(`There was a problem getting subsequent pages from the mail list. The error was: ${err}`);
-          process.exit(9);
-        });
-      }
-
-      internals.subscribedListMembers = listMembers;
-
-      // Now we need to order listMembers based on the mailgunMateScheduledSends date.
-      const theyAreTheSame = 0;
-      const aIsLessThanB = -1;
-      const aIsGreaterThanB = 1;
-      const dateTimePart = 1;
-
-      let displayDate;
-
-      const displayableSubscribedListMembers = internals.subscribedListMembers.map((listMember) => {
-        if (listMember.vars.mailgunMateScheduledSends) {
-          const dateTimes = listMember.vars.mailgunMateScheduledSends.map(scheduledSend => scheduledSend[dateTimePart]);
-          const sortedDateTimes = dateTimes.sort();
-          const greatestDateTime = sortedDateTimes[sortedDateTimes.length - 1];
-          displayDate = greatestDateTime;
-        } else {
-          displayDate = '';
-        }
-        return { address: listMember.address, latestScheduledSend: displayDate, name: listMember.name };
-      });
-
-      const orderedDisplayableSubscribedListMembers = displayableSubscribedListMembers.sort((a, b) => {
-        if (a.latestScheduledSend < b.latestScheduledSend) return aIsLessThanB;
-        if (a.latestScheduledSend > b.latestScheduledSend) return aIsGreaterThanB;
-        return theyAreTheSame;
-      });
-
-      if (internals.listMemberDispalyOrder === 'des') orderedDisplayableSubscribedListMembers.reverse();
-
-      workWithListMembersOnceEstablished(orderedDisplayableSubscribedListMembers);
-    }, (err) => {
-      if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
-        log.crit('Authentication unsuccessful! Feel free to try again.');
-        log.error(`Retrieving mail list mebers was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
+    while (nextPage) {
+      await internals.mailgun.get(nextPage).then((page) => {
+        nextPage = page.items.length === mailgunMaxPageSize ? page.paging.next.split('https://api.mailgun.net/v3')[1] : null;
+        listMembers = listMembers.concat(page.items);
+      }, (err) => {
+        log.error(`There was a problem getting subsequent pages from the mail list. The error was: ${err}`);
         process.exit(9);
-      }
-      log.error(`Error occured while attempting to retrieve the mail list members. Error was: "${err}"`);
+      });
     }
-  );
+
+    internals.subscribedListMembers = listMembers;
+
+    // Now we need to order listMembers based on the mailgunMateScheduledSends date.
+    const theyAreTheSame = 0;
+    const aIsLessThanB = -1;
+    const aIsGreaterThanB = 1;
+    const dateTimePart = 1;
+
+    let displayDate;
+
+    const displayableSubscribedListMembers = internals.subscribedListMembers.map((listMember) => {
+      if (listMember.vars.mailgunMateScheduledSends) {
+        const dateTimes = listMember.vars.mailgunMateScheduledSends.map(scheduledSend => scheduledSend[dateTimePart]);
+        const sortedDateTimes = dateTimes.sort();
+        const greatestDateTime = sortedDateTimes[sortedDateTimes.length - 1];
+        displayDate = greatestDateTime;
+      } else {
+        displayDate = '';
+      }
+      return { address: listMember.address, latestScheduledSend: displayDate, name: listMember.name };
+    });
+
+    const orderedDisplayableSubscribedListMembers = displayableSubscribedListMembers.sort((a, b) => {
+      if (a.latestScheduledSend < b.latestScheduledSend) return aIsLessThanB;
+      if (a.latestScheduledSend > b.latestScheduledSend) return aIsGreaterThanB;
+      return theyAreTheSame;
+    });
+
+    if (internals.listMemberDispalyOrder === 'des') orderedDisplayableSubscribedListMembers.reverse();
+
+    workWithListMembersOnceEstablished(orderedDisplayableSubscribedListMembers);
+  }, (err) => {
+    if (err && err.statusCode === 401 && err.message === 'Unauthorized') {
+      log.crit('Authentication unsuccessful! Feel free to try again.');
+      log.error(`Retrieving mail list mebers was unsuccessful. Error: {statusCode: ${err.statusCode}, message: ${err.message}}.`);
+      process.exit(9);
+    }
+    log.error(`Error occured while attempting to retrieve the mail list members. Error was: "${err}"`);
+  });
 };
 
 
@@ -134,14 +132,13 @@ const authenticateToMailgun = async () => {
 };
 
 
-
 module.exports = {
   authenticateToMailgun,
   establishSubscribedListMembersAndSort,
   subscribedListMembers: () => internals.subscribedListMembers,
   mailgun: () => internals.mailgun,
   list: () => internals.list,
-  setListMemberDispalyOrder: (listMemberDispalyOrder) => {internals.listMemberDispalyOrder = listMemberDispalyOrder},
+  setListMemberDispalyOrder: (listMemberDispalyOrder) => { internals.listMemberDispalyOrder = listMemberDispalyOrder; },
   setMailList: (mailList) => {
     internals.mailList = mailList;
     log.notice(`Your currently configured mailgun list is "${internals.mailList}".`);
@@ -153,5 +150,6 @@ module.exports = {
       log.error(`Could not read file: ${filePath}, the error was: ${err.message}.`);
       process.exit(9);
     }
+    return undefined;
   }
 };
