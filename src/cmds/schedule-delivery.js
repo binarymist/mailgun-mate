@@ -34,7 +34,7 @@ exports.setup = (sywac) => {
     .option(
       '-t, --schedule-time <time-to-schedule-email-send-for>',
       {
-        type: 'MailgunDateTimeFormat', desc: 'The time that all emails will be sent (in RFC 2822 time).', strict: true
+        type: 'MailgunDateTimeFormat', desc: 'The time that all emails will be sent (in RFC 2822 time). Ex: For NZST: `Fri, 15 Jun 2018 17:04:00 +1200`', required: true
       }
     )
     .option(
