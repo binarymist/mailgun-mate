@@ -1,6 +1,6 @@
 # mailgun-mate
 
-Email batch scheduling CLI. Code is currently in proof of concept (PoC) form.
+Email batch scheduling CLI. Code has been manually tested and is doing everything I need it to do.
 
 [![Build Status](https://api.travis-ci.org/binarymist/mailgun-mate.png)](https://travis-ci.org/binarymist/mailgun-mate) &nbsp; [![license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/binarymist/mailgun-mate/blob/master/LICENSE)
 
