@@ -127,6 +127,10 @@ npm run debug -- [command(s)] [option(s)]
 
 Please open an [issue](https://github.com/binarymist/mailgun-mate/issues) to discus the proposed change before submitting a [pull request](https://github.com/binarymist/mailgun-mate/pulls).
 
+## Questions
+
+If you have any questions around the installation, configuration or running of mailgun-mate, please submit an [issue](https://github.com/binarymist/mailgun-mate/issues).
+
 ## License
 
 Copyright [Kim Carter](https://github.com/binarymist) and other contributors, Licensed under [MIT](./LICENSE).
