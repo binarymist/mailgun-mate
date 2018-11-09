@@ -1,4 +1,4 @@
-const config = require('config');
+const config = require('../config/config');
 const log = require('purpleteam-logger').init(config.get('logger')); // eslint-disable-line no-unused-vars
 const { processCommands } = require('./cli');
 

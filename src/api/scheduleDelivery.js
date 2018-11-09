@@ -1,7 +1,7 @@
 const moment = require('moment');
 const Type = require('sywac/types/type');
 const inquirer = require('inquirer');
-const config = require('config');
+const config = require('../../config/config');
 const log = require('purpleteam-logger').logger();
 const commonApi = require('./common');
 

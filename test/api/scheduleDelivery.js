@@ -6,7 +6,7 @@ const { expect } = require('code');
 const sinon = require('sinon');
 const rewire = require('rewire');
 
-const config = require('config');
+const config = require('../../config/config');
 
 // log is used in the SUT.
 // eslint-disable-next-line no-unused-vars

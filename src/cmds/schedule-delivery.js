@@ -1,4 +1,4 @@
-const config = require('config');
+const config = require('../../config/config');
 const log = require('purpleteam-logger').logger();
 const { scheduleDelivery: scheduleDeliveryApi, common: commonApi } = require('../api');
 

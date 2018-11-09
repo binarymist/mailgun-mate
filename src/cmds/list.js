@@ -1,4 +1,4 @@
-const config = require('config');
+const config = require('../../config/config');
 const { list: listApi, common: commonApi } = require('../api');
 
 exports.flags = `list [order=${config.get('displayOrderOfListMemberScheduledSends')}]`;
