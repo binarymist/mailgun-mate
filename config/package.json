@@ -1,0 +1,11 @@
+{
+  "name": "config",
+  "version": "1.0.0",
+  "description": "config for mailgun-mate",
+  "main": "config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "BinaryMist",
+  "license": "ISC"
+}

@@ -1,6 +1,6 @@
-const config = require('config/config');
+const config = require('config');
 const log = require('purpleteam-logger').logger();
-const { scheduleDelivery: scheduleDeliveryApi, common: commonApi } = require('src/api');
+const { scheduleDelivery: scheduleDeliveryApi, common: commonApi } = require('../api');
 
 exports.flags = 'schedule-delivery';
 exports.desc = 'Launch scheduled mail delivery, max of three days in advance.';

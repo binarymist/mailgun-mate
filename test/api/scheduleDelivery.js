@@ -1,4 +1,3 @@
-require('app-module-path').addPath(process.cwd());
 exports.lab = require('lab').script();
 
 const { describe, it } = exports.lab;
@@ -7,12 +6,12 @@ const { expect } = require('code');
 const sinon = require('sinon');
 const rewire = require('rewire');
 
-const config = require('config/config');
+const config = require('config');
 
 // log is used in the SUT.
 // eslint-disable-next-line no-unused-vars
 const log = require('purpleteam-logger').init(config.get('logger'));
-const { common: commonApi } = require('src/api');
+const { common: commonApi } = require('../../src/api');
 
 // 'shot' for mocking http requests
 
@@ -27,7 +26,7 @@ describe('scheduleDelivery', async () => {
 
       subscribedListMembersStub.returns(subscribedListMembers);
 
-      const rewiredScheduleDeliveryApi = rewire('src/api/scheduleDelivery');
+      const rewiredScheduleDeliveryApi = rewire('../../src/api/scheduleDelivery');
       const revertSubscribedListMembers = rewiredScheduleDeliveryApi.__set__('commonApi', { subscribedListMembers: subscribedListMembersStub });
 
       const internalsEmailPropsTo = [

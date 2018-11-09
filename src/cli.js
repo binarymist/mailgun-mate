@@ -1,9 +1,9 @@
 const sywac = require('sywac');
 const chalk = require('chalk');
 const figlet = require('figlet');
-const pkg = require('package.json');
+const pkg = require('../package.json');
 const log = require('purpleteam-logger').logger(); // eslint-disable-line no-unused-vars
-const { scheduleDelivery: scheduleDeliveryApi } = require('src/api');
+const { scheduleDelivery: scheduleDeliveryApi } = require('./api');
 
 const processCommands = async (options) => { // eslint-disable-line no-unused-vars
   const cliArgs = await sywac // eslint-disable-line no-unused-vars

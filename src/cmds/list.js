@@ -1,5 +1,5 @@
-const config = require('config/config');
-const { list: listApi, common: commonApi } = require('src/api');
+const config = require('config');
+const { list: listApi, common: commonApi } = require('../api');
 
 exports.flags = `list [order=${config.get('displayOrderOfListMemberScheduledSends')}]`;
 exports.desc = 'List members in order based on latest or oldest mailgunMateScheduledSends datetimes.';

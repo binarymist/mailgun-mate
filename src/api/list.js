@@ -1,6 +1,6 @@
-const config = require('config/config');
+const config = require('config');
 const log = require('purpleteam-logger').logger();
-const commonApi = require('src/api/common');
+const commonApi = require('./common');
 
 const displaySubscribedListMembers = async () => {
   await commonApi.establishSubscribedListMembersAndSort((orderedDisplayableSubscribedListMembers) => {

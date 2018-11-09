@@ -1,9 +1,9 @@
 const moment = require('moment');
 const Type = require('sywac/types/type');
 const inquirer = require('inquirer');
-const config = require('config/config');
+const config = require('config');
 const log = require('purpleteam-logger').logger();
-const commonApi = require('src/api/common');
+const commonApi = require('./common');
 
 const emailCheckBoxPrompt = inquirer.createPromptModule();
 const tagInputPrompt = inquirer.createPromptModule();

@@ -2,7 +2,7 @@ const readFileAsync = require('util').promisify(require('fs').readFile);
 const inquirer = require('inquirer');
 const createMailgun = require('mailgun-js');
 const os = require('os');
-const config = require('config/config');
+const config = require('config');
 const log = require('purpleteam-logger').logger();
 
 const apiKeyPrompt = inquirer.createPromptModule();

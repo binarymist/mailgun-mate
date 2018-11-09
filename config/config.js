@@ -1,6 +1,6 @@
 const convict = require('convict');
 const path = require('path');
-const pkg = require('package.json');
+const pkg = require('../package.json');
 
 const schema = {
   env: {
