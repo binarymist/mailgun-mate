@@ -1,8 +1,22 @@
-# mailgun-mate
+<div align="center">
+  <h1>mailgun-mate</h1><br/>
+    Email batch scheduling CLI
+  <br/><br/>
 
-Email batch scheduling CLI. Code has been manually tested and is doing everything I need it to do.
+  <a href="https://travis-ci.org/binarymist/mailgun-mate" title="build status">
+     <img src="https://api.travis-ci.org/binarymist/mailgun-mate.png" alt="build status">
+  </a>
 
-[![Build Status](https://api.travis-ci.org/binarymist/mailgun-mate.png)](https://travis-ci.org/binarymist/mailgun-mate) &nbsp; [![license](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/binarymist/mailgun-mate/blob/master/LICENSE)
+  <a href="https://github.com/binarymist/mailgun-mate/blob/master/LICENSE" title="license">
+     <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="test coverage">
+  </a>
+  <br/><br/>
+  <a href="https://user-images.githubusercontent.com/2862029/48247907-f517cc80-e459-11e8-8b30-63810d89fdeb.gif" title="mailgun-mate">
+    <img width=900px src="https://user-images.githubusercontent.com/2862029/48247907-f517cc80-e459-11e8-8b30-63810d89fdeb.gif" alt="running mailgun-mate">
+  </a>
+
+<br/>
+</div>
 
 ## Install
 
