@@ -23,7 +23,7 @@ First, you need to have a free mailgun account, a domain setup there, and at lea
 
 ### Configuration
 
-This project uses [convict](https://github.com/mozilla/node-convict). The configuration file(s) are in [`./config/`](https://github.com/binarymist/mailgun-mate/tree/master/config). You will need to provide one according to the `NODE_ENV` you are running `mailgun-mate` with. First find where `mailgun-mate` is installed to with `whereis mailgun-mate`.
+This project uses [convict](https://github.com/mozilla/node-convict). The configuration file(s) are in [`./config/`](https://github.com/binarymist/mailgun-mate/tree/master/config). You will need to provide one according to the `NODE_ENV` environment variable you are running `mailgun-mate` with. First find where `mailgun-mate` is installed to with `whereis mailgun-mate`. This command will show where the bin file is, from there, you just need to ascend the directories until you find a `lib/node_modules/mailgun-mate/config/` directory. From there, you can copy the `config.example.json` file and rename it to `config.[your-environment].json` (`your-environment` should be `development`, `production`, or what ever you set `NODE_ENV` to).
 
 
 
