@@ -12,7 +12,7 @@
   </a>
   <br/><br/>
   <a href="https://user-images.githubusercontent.com/2862029/48294186-aa449600-e4e7-11e8-8c0e-418ff56adc8a.gif" title="mailgun-mate">
-    <img width=800px src="https://user-images.githubusercontent.com/2862029/48294186-aa449600-e4e7-11e8-8c0e-418ff56adc8a.gif" alt="running mailgun-mate">
+    <img width=900px src="https://user-images.githubusercontent.com/2862029/48294186-aa449600-e4e7-11e8-8c0e-418ff56adc8a.gif" alt="running mailgun-mate">
   </a>
 
 <br/>
