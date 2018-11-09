@@ -23,7 +23,9 @@ First, you need to have a free mailgun account, a domain setup there, and at lea
 
 ### Configuration
 
-This project uses [convict](https://github.com/mozilla/node-convict). The configuration file(s) are in [`./config/`](https://github.com/binarymist/mailgun-mate/tree/master/config).
+This project uses [convict](https://github.com/mozilla/node-convict). The configuration file(s) are in [`./config/`](https://github.com/binarymist/mailgun-mate/tree/master/config). You will need to provide one according to the `NODE_ENV` you are running `mailgun-mate` with. First find where `mailgun-mate` is installed to with `whereis mailgun-mate`.
+
+
 
 Decide on a directory that you will put your text files containing `HTML` (although just text is also fine), and assign that directory path to your config file's `emailBodyFileDir` property.  
 In your `HTML` mailout files, you can add an unsubscribe link 
