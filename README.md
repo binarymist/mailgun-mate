@@ -11,8 +11,8 @@
      <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="test coverage">
   </a>
   <br/><br/>
-  <a href="https://user-images.githubusercontent.com/2862029/48247907-f517cc80-e459-11e8-8b30-63810d89fdeb.gif" title="mailgun-mate">
-    <img width=900px src="https://user-images.githubusercontent.com/2862029/48247907-f517cc80-e459-11e8-8b30-63810d89fdeb.gif" alt="running mailgun-mate">
+  <a href="https://user-images.githubusercontent.com/2862029/48294186-aa449600-e4e7-11e8-8c0e-418ff56adc8a.gif" title="mailgun-mate">
+    <img width=800px src="https://user-images.githubusercontent.com/2862029/48294186-aa449600-e4e7-11e8-8c0e-418ff56adc8a.gif" alt="running mailgun-mate">
   </a>
 
 <br/>
